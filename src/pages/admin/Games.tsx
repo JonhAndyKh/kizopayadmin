@@ -16,6 +16,7 @@ interface AdminGame {
   isVisible: boolean;
   isPinned: boolean;
   requiresZoneId: boolean;
+  volseverRoute: string;
   description: string;
   notes: string;
   hasOverride: boolean;
@@ -56,6 +57,7 @@ export default function GamesPage() {
 
   const [expanded, setExpanded] = useState<string | null>(null);
   const [descDraft, setDescDraft] = useState<Record<string, string>>({});
+  const [routeDraft, setRouteDraft] = useState<Record<string, string>>({});
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [customGame, setCustomGame] = useState({
     gameCode: "",
@@ -64,6 +66,7 @@ export default function GamesPage() {
     imageUrl: "",
     category: "Other",
     providerGameCode: "",
+    volseverRoute: "",
     requiresZoneId: false,
   });
   const [customProducts, setCustomProducts] = useState<CustomProductDraft[]>([
@@ -91,6 +94,7 @@ export default function GamesPage() {
         imageUrl: "",
         category: "Other",
         providerGameCode: "",
+        volseverRoute: "",
         requiresZoneId: false,
       });
       setCustomProducts([{ productCode: "", name: "", price: "" }]);
@@ -147,6 +151,26 @@ export default function GamesPage() {
     onError: () => toast({ title: "Failed to update pin", variant: "destructive" }),
   });
 
+  const customRouteMutation = useMutation({
+    mutationFn: async ({ gameCode, volseverRoute }: { gameCode: string; volseverRoute: string }) => {
+      const res = await authFetch(`/api/admin/custom-games/${gameCode}/volsever-route`, {
+        method: "POST",
+        body: JSON.stringify({ volseverRoute }),
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        throw new Error(payload?.error ?? "Failed to update Volsever route");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-games"] });
+      qc.invalidateQueries({ queryKey: ["games"] });
+      toast({ title: "Volsever route updated" });
+    },
+    onError: (error) => toast({ title: error instanceof Error ? error.message : "Failed to update Volsever route", variant: "destructive" }),
+  });
+
   const restoreApiCheckMutation = useMutation({
     mutationFn: async () => {
       const res = await authFetch("/api/admin/games/restore-api-check", { method: "POST" });
@@ -162,12 +186,15 @@ export default function GamesPage() {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: async ({ gameCode, isVisible, isPinned, requiresZoneId, description }: { gameCode: string; isVisible?: boolean; isPinned?: boolean; requiresZoneId?: boolean; description?: string }) => {
+    mutationFn: async ({ gameCode, isVisible, isPinned, requiresZoneId, volseverRoute, description }: { gameCode: string; isVisible?: boolean; isPinned?: boolean; requiresZoneId?: boolean; volseverRoute?: string; description?: string }) => {
       const res = await authFetch("/api/admin/games/override", {
         method: "POST",
-        body: JSON.stringify({ gameCode, isVisible, isPinned, requiresZoneId, description }),
+        body: JSON.stringify({ gameCode, isVisible, isPinned, requiresZoneId, volseverRoute, description }),
       });
-      if (!res.ok) throw new Error("Failed to update game");
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        throw new Error(payload?.error ?? "Failed to update game");
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -175,7 +202,7 @@ export default function GamesPage() {
       qc.invalidateQueries({ queryKey: ["games"] });
       toast({ title: "Game settings updated" });
     },
-    onError: () => toast({ title: "Failed to update game", variant: "destructive" }),
+    onError: (error) => toast({ title: error instanceof Error ? error.message : "Failed to update game", variant: "destructive" }),
   });
 
   const filtered = games.filter((g) =>
@@ -238,6 +265,11 @@ export default function GamesPage() {
               placeholder="Provider game code (optional for lookup)"
               value={customGame.providerGameCode}
               onChange={(e) => setCustomGame((game) => ({ ...game, providerGameCode: e.target.value }))}
+            />
+            <Input
+              placeholder="Volsever route, e.g. mobile-legend-mp (optional)"
+              value={customGame.volseverRoute}
+              onChange={(e) => setCustomGame((game) => ({ ...game, volseverRoute: e.target.value }))}
             />
             <Input
               placeholder="Image URL (optional)"
@@ -391,7 +423,7 @@ export default function GamesPage() {
                     </span>
                   )}
                   <button
-                    onClick={() => toggleMutation.mutate({ gameCode: game.gameCode, isVisible: game.isVisible, isPinned: game.isPinned, requiresZoneId: !game.requiresZoneId, description: game.description })}
+                    onClick={() => toggleMutation.mutate({ gameCode: game.gameCode, isVisible: game.isVisible, isPinned: game.isPinned, requiresZoneId: !game.requiresZoneId, volseverRoute: game.volseverRoute, description: game.description })}
                     disabled={toggleMutation.isPending}
                     className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border transition-colors ${game.requiresZoneId ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground border-border hover:border-primary/20 hover:text-primary"}`}
                   >
@@ -418,7 +450,11 @@ export default function GamesPage() {
                   title="Edit description"
                   onClick={() => {
                     if (expanded === game.gameCode) { setExpanded(null); }
-                    else { setExpanded(game.gameCode); setDescDraft((d) => ({ ...d, [game.gameCode]: game.description ?? "" })); }
+                    else {
+                      setExpanded(game.gameCode);
+                      setDescDraft((d) => ({ ...d, [game.gameCode]: game.description ?? "" }));
+                      setRouteDraft((d) => ({ ...d, [game.gameCode]: game.volseverRoute ?? "" }));
+                    }
                   }}
                 >
                   {expanded === game.gameCode ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -430,7 +466,7 @@ export default function GamesPage() {
                   data-testid={`btn-toggle-${game.gameCode}`}
                   onClick={() => game.isCustom
                     ? customVisibilityMutation.mutate({ gameCode: game.gameCode, isVisible: !game.isVisible })
-                    : toggleMutation.mutate({ gameCode: game.gameCode, isVisible: !game.isVisible, isPinned: game.isPinned, requiresZoneId: game.requiresZoneId, description: game.description })}
+                    : toggleMutation.mutate({ gameCode: game.gameCode, isVisible: !game.isVisible, isPinned: game.isPinned, requiresZoneId: game.requiresZoneId, volseverRoute: game.volseverRoute, description: game.description })}
                   disabled={toggleMutation.isPending || customVisibilityMutation.isPending || customPinMutation.isPending || customDeleteMutation.isPending}
                 >
                   {game.isVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -443,7 +479,7 @@ export default function GamesPage() {
                   data-testid={`btn-pin-${game.gameCode}`}
                   onClick={() => game.isCustom
                     ? customPinMutation.mutate({ gameCode: game.gameCode, isPinned: !game.isPinned })
-                    : toggleMutation.mutate({ gameCode: game.gameCode, isVisible: game.isVisible, isPinned: !game.isPinned, requiresZoneId: game.requiresZoneId, description: game.description })}
+                    : toggleMutation.mutate({ gameCode: game.gameCode, isVisible: game.isVisible, isPinned: !game.isPinned, requiresZoneId: game.requiresZoneId, volseverRoute: game.volseverRoute, description: game.description })}
                   disabled={toggleMutation.isPending || customPinMutation.isPending || customVisibilityMutation.isPending || customDeleteMutation.isPending}
                 >
                   <Pin className="w-4 h-4" />
@@ -479,15 +515,30 @@ export default function GamesPage() {
                   value={descDraft[game.gameCode] ?? ""}
                   onChange={(e) => setDescDraft((d) => ({ ...d, [game.gameCode]: e.target.value }))}
                 />
-                <div className="flex gap-2 mt-2 justify-end">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 mt-4">Volsever check-user route</p>
+                <Input
+                  placeholder="e.g. mobile-legend-mp (leave empty to use the built-in route)"
+                  value={routeDraft[game.gameCode] ?? ""}
+                  onChange={(e) => setRouteDraft((d) => ({ ...d, [game.gameCode]: e.target.value }))}
+                  data-testid={`input-volsever-route-${game.gameCode}`}
+                />
+                <p className="text-[11px] text-muted-foreground mt-1.5">
+                  The store calls gate.volsever.com/proxy/api/game/&lt;route&gt; with the player ID (and Zone / Server ID when entered) to verify the account. The API key stays on the server.
+                </p>
+                <div className="flex gap-2 mt-3 justify-end">
                   <Button size="sm" variant="ghost" onClick={() => setExpanded(null)}>
                     <X className="w-3 h-3 mr-1" /> Cancel
                   </Button>
                   <Button
                     size="sm"
-                    disabled={toggleMutation.isPending}
+                    disabled={toggleMutation.isPending || customRouteMutation.isPending}
+                    data-testid={`btn-save-settings-${game.gameCode}`}
                     onClick={() => {
-                      toggleMutation.mutate({ gameCode: game.gameCode, isVisible: game.isVisible, isPinned: game.isPinned, requiresZoneId: game.requiresZoneId, description: descDraft[game.gameCode] ?? "" });
+                      if (game.isCustom) {
+                        customRouteMutation.mutate({ gameCode: game.gameCode, volseverRoute: routeDraft[game.gameCode] ?? "" });
+                      } else {
+                        toggleMutation.mutate({ gameCode: game.gameCode, isVisible: game.isVisible, isPinned: game.isPinned, requiresZoneId: game.requiresZoneId, volseverRoute: routeDraft[game.gameCode] ?? "", description: descDraft[game.gameCode] ?? "" });
+                      }
                       setExpanded(null);
                     }}
                   >
