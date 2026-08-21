@@ -3,12 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/utils/game-helpers";
 import { format } from "date-fns";
-import { Activity, CheckCircle, Clock, XCircle, Zap, ShieldAlert, Wallet, TrendingUp, AlertTriangle, DollarSign, Eye, ReceiptText } from "lucide-react";
+import { Activity, CheckCircle, Clock, XCircle, Zap, ShieldAlert, Wallet, TrendingUp, AlertTriangle, DollarSign, Eye, ReceiptText, Search, RotateCcw, Filter } from "lucide-react";
 
 const TOKEN_KEY = "kizopay_token";
 
@@ -76,10 +77,23 @@ export default function AdminDashboard() {
   const { data: balance, isLoading: isLoadingBalance } = useResellerBalance();
   const { data: catalogGames = [] } = useCatalogGames();
   const [selectedOrder, setSelectedOrder] = useState<OrderSummary["recentOrders"][number] | null>(null);
+  const [operationSearch, setOperationSearch] = useState("");
+  const [operationStatus, setOperationStatus] = useState("all");
   const balanceAmount = balance ? Number(balance.balance) : Number.NaN;
   const spentAmount = balance ? Number(balance.totalSpent) : Number.NaN;
   const isLowBalance = Number.isFinite(balanceAmount) && balanceAmount < 5;
   const gameImages = new Map(catalogGames.map((game) => [game.name, game.imageUrl]));
+  const normalizedSearch = operationSearch.trim().toLowerCase();
+  const filteredOrders = (summary?.recentOrders ?? []).filter((order) => {
+    const matchesSearch = !normalizedSearch || [
+      order.id, order.gameName, order.productName, order.playerId, order.serverId ?? "",
+    ].join(" ").toLowerCase().includes(normalizedSearch);
+    const matchesStatus = operationStatus === "all"
+      || order.orderStatus === operationStatus
+      || order.paymentStatus === operationStatus
+      || (operationStatus === "success" && (order.orderStatus === "completed" || order.paymentStatus === "paid" || order.paymentStatus === "approved"));
+    return matchesSearch && matchesStatus;
+  });
 
   if (error) {
     return (
@@ -155,11 +169,59 @@ export default function AdminDashboard() {
               <Activity className="w-5 h-5 text-accent" />
               <h2 className="font-display font-black uppercase tracking-widest text-sm text-foreground">Recent Operations</h2>
             </div>
-            {summary.recentOrders.length === 0 ? (
-              <div className="p-16 text-center text-muted-foreground font-medium font-display uppercase tracking-widest">No operations recorded</div>
+            <div className="border-b border-border/70 bg-background/35 p-3 sm:p-5">
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px_auto]">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={operationSearch}
+                    onChange={(event) => setOperationSearch(event.target.value)}
+                    placeholder="Search transaction, game, player ID…"
+                    className="h-11 rounded-xl border-border bg-card pl-9 text-sm"
+                    aria-label="Search recent operations"
+                    data-testid="input-search-operations"
+                  />
+                </div>
+                <div className="relative">
+                  <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <select
+                    value={operationStatus}
+                    onChange={(event) => setOperationStatus(event.target.value)}
+                    className="h-11 w-full appearance-none rounded-xl border border-border bg-card pl-9 pr-8 text-sm font-medium text-foreground outline-none focus:border-primary"
+                    aria-label="Filter operations by status"
+                    data-testid="select-operation-status"
+                  >
+                    <option value="all">All statuses</option>
+                    <option value="success">Success</option>
+                    <option value="processing">Processing</option>
+                    <option value="pending">Pending</option>
+                    <option value="failed">Failed</option>
+                    <option value="expired">Expired</option>
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setOperationSearch(""); setOperationStatus("all"); }}
+                  disabled={!operationSearch && operationStatus === "all"}
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-45"
+                  data-testid="button-reset-operation-filters"
+                >
+                  <RotateCcw className="h-4 w-4" /> Reset
+                </button>
+              </div>
+              {(operationSearch || operationStatus !== "all") && (
+                <p className="mt-2 text-xs font-medium text-muted-foreground">
+                  Showing {filteredOrders.length} of {summary.recentOrders.length} recent operations
+                </p>
+              )}
+            </div>
+            {filteredOrders.length === 0 ? (
+              <div className="p-12 text-center text-muted-foreground font-medium font-display uppercase tracking-widest">
+                {summary.recentOrders.length === 0 ? "No operations recorded" : "No matching operations"}
+              </div>
             ) : (
               <div className="grid gap-4 p-3 sm:p-5">
-                {summary.recentOrders.map((order) => {
+                {filteredOrders.map((order) => {
                   const imageUrl = gameImages.get(order.gameName);
                   const isSuccess = order.orderStatus === "completed" || order.paymentStatus === "paid" || order.paymentStatus === "approved";
                   return (
