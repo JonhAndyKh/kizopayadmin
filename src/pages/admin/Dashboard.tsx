@@ -149,19 +149,21 @@ export default function AdminDashboard() {
 
       {isLoading || !summary ? (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
+          <div className="grid grid-cols-2 gap-3 mb-6 sm:gap-4 sm:mb-10 lg:grid-cols-5">
             {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}
           </div>
           <Skeleton className="h-[500px] w-full rounded-xl" />
         </>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
+          <div className="grid grid-cols-2 gap-3 mb-6 sm:gap-4 sm:mb-10 lg:grid-cols-5">
             <StatCard title="Total Volume" value={summary.total} icon={<Zap className="w-6 h-6 text-primary fill-primary/20" />} color="border-primary" />
             <StatCard title="Pending" value={summary.pending} icon={<Clock className="w-6 h-6 text-amber-500" />} color="border-amber-500" />
             <StatCard title="Victories" value={summary.completed} icon={<CheckCircle className="w-6 h-6 text-emerald-500" />} color="border-emerald-500" />
             <StatCard title="Defeats" value={summary.failed} icon={<XCircle className="w-6 h-6 text-destructive" />} color="border-destructive" />
-            <StatCard title="Net Profit" value={`$${summary.profitUsd.toFixed(2)}`} icon={<DollarSign className="w-6 h-6 text-accent" />} color="border-accent" />
+            <div className="col-span-2 lg:col-span-1">
+              <StatCard title="Net Profit" value={`$${summary.profitUsd.toFixed(2)}`} icon={<DollarSign className="w-6 h-6 text-accent" />} color="border-accent" />
+            </div>
           </div>
 
           <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -314,12 +316,12 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 
 function StatCard({ title, value, icon, color }: { title: string; value: number | string; icon: React.ReactNode; color: string }) {
   return (
-    <div className={`bg-card border ${color} rounded-xl p-6 flex flex-col justify-between h-full relative overflow-hidden group hover:bg-muted/20 transition-colors`}>
-      <div className="flex items-center justify-between mb-6">
+    <div className={`bg-card border ${color} rounded-xl p-4 sm:p-6 flex flex-col justify-between min-h-[138px] sm:min-h-[160px] relative overflow-hidden group hover:bg-muted/20 transition-colors`}>
+      <div className="flex items-start justify-between gap-2 mb-4 sm:mb-6">
         <p className="text-xs font-display font-bold tracking-widest uppercase text-muted-foreground">{title}</p>
-        <div className="p-2 bg-background border-2 border-border rounded-lg">{icon}</div>
+        <div className="shrink-0 p-2 bg-background border-2 border-border rounded-lg">{icon}</div>
       </div>
-      <p className={`${typeof value === "string" ? "text-4xl" : "text-5xl"} font-display font-black tracking-tighter text-foreground`}>
+      <p className={`${typeof value === "string" ? "text-2xl sm:text-4xl" : "text-4xl sm:text-5xl"} font-display font-black tracking-tighter text-foreground`}>
         {typeof value === "number" ? value.toLocaleString() : value}
       </p>
     </div>
