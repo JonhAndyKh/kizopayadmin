@@ -228,13 +228,15 @@ export default function AdminDashboard() {
                   const isSuccess = order.orderStatus === "completed" || order.paymentStatus === "paid" || order.paymentStatus === "approved";
                   return (
                     <article key={order.id} className="overflow-hidden rounded-2xl border border-border/80 bg-background/45 shadow-sm transition-colors hover:border-accent/35">
-                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 px-4 py-3 sm:px-5">
-                        <div className="min-w-0 text-xs text-muted-foreground">
-                          <span className="font-mono font-bold text-foreground">#{order.id}</span>
-                          <span className="mx-2 text-border">·</span>
-                          <span>{format(new Date(order.createdAt), "MMM d, yyyy · h:mm a")}</span>
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border/70 px-4 py-3 sm:px-5">
+                        <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+                          <span className="min-w-0 max-w-[55%] truncate font-mono font-bold text-foreground" title={`#${order.id}`}>#{order.id}</span>
+                          <span className="shrink-0 text-border">·</span>
+                          <span className="shrink-0 whitespace-nowrap">{format(new Date(order.createdAt), "MMM d · h:mm a")}</span>
                         </div>
-                        <StatusBadge status={isSuccess ? "success" : order.orderStatus} />
+                        <div className="shrink-0">
+                          <StatusBadge status={isSuccess ? "success" : order.orderStatus} />
+                        </div>
                       </div>
                       <div className="flex items-center gap-3 border-b border-border/60 px-4 py-4 sm:px-5">
                         {imageUrl ? (
