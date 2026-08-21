@@ -1,13 +1,14 @@
 import { apiUrl } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/utils/game-helpers";
 import { format } from "date-fns";
-import { Activity, CheckCircle, Clock, XCircle, Zap, ShieldAlert, Wallet, TrendingUp, AlertTriangle, DollarSign } from "lucide-react";
+import { Activity, CheckCircle, Clock, XCircle, Zap, ShieldAlert, Wallet, TrendingUp, AlertTriangle, DollarSign, Eye, ReceiptText } from "lucide-react";
 
 const TOKEN_KEY = "kizopay_token";
 
@@ -24,8 +25,14 @@ interface OrderSummary {
   total: number; pending: number; paid: number; completed: number; failed: number; profitUsd: number;
   recentOrders: Array<{
     id: string; gameName: string; productName: string; playerId: string;
-    amountUsd: string; currency: string; paymentStatus: string; orderStatus: string; createdAt: string;
+    serverId?: string | null; amountUsd: string; currency: string; paymentStatus: string; orderStatus: string; createdAt: string; updatedAt?: string;
   }>;
+}
+
+interface CatalogGame {
+  gameCode: string;
+  name: string;
+  imageUrl?: string;
 }
 
 function useResellerBalance() {
@@ -52,12 +59,27 @@ function useAdminOrderSummary() {
   });
 }
 
+function useCatalogGames() {
+  return useQuery<CatalogGame[]>({
+    queryKey: ["catalog-games"],
+    queryFn: async () => {
+      const res = await fetch(apiUrl("/api/games"));
+      if (!res.ok) throw new Error("Failed to fetch games");
+      return res.json();
+    },
+    staleTime: 60_000,
+  });
+}
+
 export default function AdminDashboard() {
   const { data: summary, isLoading, error } = useAdminOrderSummary();
   const { data: balance, isLoading: isLoadingBalance } = useResellerBalance();
+  const { data: catalogGames = [] } = useCatalogGames();
+  const [selectedOrder, setSelectedOrder] = useState<OrderSummary["recentOrders"][number] | null>(null);
   const balanceAmount = balance ? Number(balance.balance) : Number.NaN;
   const spentAmount = balance ? Number(balance.totalSpent) : Number.NaN;
   const isLowBalance = Number.isFinite(balanceAmount) && balanceAmount < 5;
+  const gameImages = new Map(catalogGames.map((game) => [game.name, game.imageUrl]));
 
   if (error) {
     return (
@@ -136,41 +158,95 @@ export default function AdminDashboard() {
             {summary.recentOrders.length === 0 ? (
               <div className="p-16 text-center text-muted-foreground font-medium font-display uppercase tracking-widest">No operations recorded</div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="bg-muted/30">
-                    <TableRow className="border-border">
-                      {["Target ID","Timestamp","Payload","Value","Payment","Fulfillment"].map(h => (
-                        <TableHead key={h} className="font-display font-bold uppercase tracking-wider text-xs">{h}</TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {summary.recentOrders.map((order) => (
-                      <TableRow key={order.id} className="border-border/50 hover:bg-muted/30 transition-colors">
-                         <TableCell>
-                           <div className="font-mono text-sm font-bold bg-muted w-fit max-w-[140px] truncate px-2 py-0.5 rounded-lg" title={order.playerId}>
-                             {order.playerId}
-                           </div>
-                         </TableCell>
-                        <TableCell className="text-sm font-medium whitespace-nowrap text-muted-foreground">{format(new Date(order.createdAt), "MMM d, HH:mm")}</TableCell>
-                        <TableCell>
-                          <div className="font-display font-bold text-sm uppercase text-foreground">{order.gameName}</div>
-                          <div className="text-xs text-muted-foreground font-medium">{order.productName}</div>
-                        </TableCell>
-                        <TableCell className="text-right font-display font-black text-primary text-base">{formatCurrency(order.amountUsd, order.currency as any)}</TableCell>
-                        <TableCell className="text-center"><StatusBadge status={order.paymentStatus} /></TableCell>
-                        <TableCell className="text-center"><StatusBadge status={order.orderStatus} /></TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <div className="grid gap-4 p-3 sm:p-5">
+                {summary.recentOrders.map((order) => {
+                  const imageUrl = gameImages.get(order.gameName);
+                  const isSuccess = order.orderStatus === "completed" || order.paymentStatus === "paid" || order.paymentStatus === "approved";
+                  return (
+                    <article key={order.id} className="overflow-hidden rounded-2xl border border-border/80 bg-background/45 shadow-sm transition-colors hover:border-accent/35">
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 px-4 py-3 sm:px-5">
+                        <div className="min-w-0 text-xs text-muted-foreground">
+                          <span className="font-mono font-bold text-foreground">#{order.id}</span>
+                          <span className="mx-2 text-border">·</span>
+                          <span>{format(new Date(order.createdAt), "MMM d, yyyy · h:mm a")}</span>
+                        </div>
+                        <StatusBadge status={isSuccess ? "success" : order.orderStatus} />
+                      </div>
+                      <div className="flex items-center gap-3 border-b border-border/60 px-4 py-4 sm:px-5">
+                        {imageUrl ? (
+                          <img src={imageUrl} alt="" className="h-14 w-14 shrink-0 rounded-xl border border-border object-cover" />
+                        ) : (
+                          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+                            <Zap className="h-6 w-6" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <h3 className="truncate font-display text-base font-black text-foreground sm:text-lg">{order.gameName}</h3>
+                          <p className="truncate text-sm font-medium text-muted-foreground">{order.productName}</p>
+                        </div>
+                      </div>
+                      <div className="grid gap-0 sm:grid-cols-2">
+                        <OperationField label="Player ID" value={`${order.playerId}${order.serverId ? ` (${order.serverId})` : ""}`} />
+                        <OperationField label="Amount" value={formatCurrency(order.amountUsd, order.currency as any)} emphasis />
+                      </div>
+                      <div className="flex justify-end border-t border-border/60 px-4 py-3 sm:px-5">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOrder(order)}
+                          className="inline-flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-2 text-sm font-bold text-primary transition-colors hover:bg-primary/20"
+                          data-testid={`button-view-order-${order.id}`}
+                        >
+                          <Eye className="h-4 w-4" /> View
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             )}
           </div>
         </>
       )}
+      <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+        <DialogContent className="max-w-md rounded-2xl border-border bg-card">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 font-display font-black">
+              <ReceiptText className="h-5 w-5 text-primary" /> Order Details
+            </DialogTitle>
+            <DialogDescription className="font-mono text-xs">{selectedOrder?.id}</DialogDescription>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="divide-y divide-border/70 rounded-xl border border-border/70 bg-background/40">
+              <DetailRow label="Game" value={selectedOrder.gameName} />
+              <DetailRow label="Product" value={selectedOrder.productName} />
+              <DetailRow label="Player ID" value={`${selectedOrder.playerId}${selectedOrder.serverId ? ` (${selectedOrder.serverId})` : ""}`} />
+              <DetailRow label="Amount" value={formatCurrency(selectedOrder.amountUsd, selectedOrder.currency as any)} />
+              <DetailRow label="Payment" value={selectedOrder.paymentStatus} />
+              <DetailRow label="Status" value={selectedOrder.orderStatus} />
+              <DetailRow label="Placed" value={format(new Date(selectedOrder.createdAt), "MMM d, yyyy · h:mm a")} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
+  );
+}
+
+function OperationField({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-t border-border/60 px-4 py-3 first:border-t-0 sm:px-5 sm:first:border-t-0">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
+      <span className={`max-w-[68%] truncate text-right font-mono text-sm ${emphasis ? "text-lg font-black text-foreground" : "font-bold text-foreground"}`} title={value}>{value}</span>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="max-w-[68%] truncate text-right font-mono font-bold text-foreground" title={value}>{value}</span>
+    </div>
   );
 }
 
@@ -190,7 +266,7 @@ function StatCard({ title, value, icon, color }: { title: string; value: number 
 
 function StatusBadge({ status }: { status: string }) {
   let cls = "uppercase text-[9px] font-display font-bold tracking-widest px-2 py-1 rounded-lg border-2 ";
-  if (status === "paid" || status === "completed") cls += "bg-emerald-500/10 text-emerald-300 border-emerald-500/20";
+  if (status === "success" || status === "paid" || status === "completed") cls += "bg-emerald-500/10 text-emerald-300 border-emerald-500/20";
   else if (status === "failed" || status === "expired") cls += "bg-destructive/10 text-destructive border-destructive/20";
   else if (status === "pending") cls += "bg-amber-500/10 text-amber-300 border-amber-500/20";
   else cls += "bg-primary/10 text-primary border-primary/20";
