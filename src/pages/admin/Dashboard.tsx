@@ -222,14 +222,14 @@ export default function AdminDashboard() {
                 {summary.recentOrders.length === 0 ? "No operations recorded" : "No matching operations"}
               </div>
             ) : (
-              <div className="grid gap-4 p-3 sm:p-5">
+              <div className="grid gap-3 p-2.5 sm:gap-4 sm:p-5">
                 {filteredOrders.map((order) => {
                   const imageUrl = gameImages.get(order.gameName);
                   const isSuccess = order.orderStatus === "completed" || order.paymentStatus === "paid" || order.paymentStatus === "approved";
                   return (
-                    <article key={order.id} className="overflow-hidden rounded-2xl border border-border/80 bg-background/45 shadow-sm transition-colors hover:border-accent/35">
-                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border/70 px-4 py-3 sm:px-5">
-                        <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+                    <article key={order.id} className="overflow-hidden rounded-xl border border-border/80 bg-background/45 shadow-sm transition-colors hover:border-accent/35">
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border/70 px-3 py-2 sm:px-5 sm:py-3">
+                        <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground sm:gap-2 sm:text-xs">
                           <span className="min-w-0 max-w-[55%] truncate font-mono font-bold text-foreground" title={`#${order.id}`}>#{order.id}</span>
                           <span className="shrink-0 text-border">·</span>
                           <span className="shrink-0 whitespace-nowrap">{format(new Date(order.createdAt), "MMM d · h:mm a")}</span>
@@ -238,31 +238,31 @@ export default function AdminDashboard() {
                           <StatusBadge status={isSuccess ? "success" : order.orderStatus} />
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 border-b border-border/60 px-4 py-4 sm:px-5">
+                      <div className="flex items-center gap-2.5 border-b border-border/60 px-3 py-2.5 sm:gap-3 sm:px-5 sm:py-4">
                         {imageUrl ? (
-                          <img src={imageUrl} alt="" className="h-14 w-14 shrink-0 rounded-xl border border-border object-cover" />
+                          <img src={imageUrl} alt="" className="h-10 w-10 shrink-0 rounded-lg border border-border object-cover sm:h-14 sm:w-14 sm:rounded-xl" />
                         ) : (
-                          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-                            <Zap className="h-6 w-6" />
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary sm:h-14 sm:w-14 sm:rounded-xl">
+                            <Zap className="h-5 w-5 sm:h-6 sm:w-6" />
                           </div>
                         )}
                         <div className="min-w-0">
-                          <h3 className="truncate font-display text-base font-black text-foreground sm:text-lg">{order.gameName}</h3>
-                          <p className="truncate text-sm font-medium text-muted-foreground">{order.productName}</p>
+                          <h3 className="truncate font-display text-sm font-black text-foreground sm:text-lg">{order.gameName}</h3>
+                          <p className="truncate text-xs font-medium text-muted-foreground sm:text-sm">{order.productName}</p>
                         </div>
                       </div>
                       <div className="grid gap-0 sm:grid-cols-2">
                         <OperationField label="Player ID" value={`${order.playerId}${order.serverId ? ` (${order.serverId})` : ""}`} />
                         <OperationField label="Amount" value={formatCurrency(order.amountUsd, order.currency as any)} emphasis />
                       </div>
-                      <div className="flex justify-end border-t border-border/60 px-4 py-3 sm:px-5">
+                      <div className="flex justify-end border-t border-border/60 px-3 py-2 sm:px-5 sm:py-3">
                         <button
                           type="button"
                           onClick={() => setSelectedOrder(order)}
-                          className="inline-flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-2 text-sm font-bold text-primary transition-colors hover:bg-primary/20"
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary/20 sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2 sm:text-sm"
                           data-testid={`button-view-order-${order.id}`}
                         >
-                          <Eye className="h-4 w-4" /> View
+                          <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> View
                         </button>
                       </div>
                     </article>
@@ -300,9 +300,9 @@ export default function AdminDashboard() {
 
 function OperationField({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-t border-border/60 px-4 py-3 first:border-t-0 sm:px-5 sm:first:border-t-0">
-      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
-      <span className={`max-w-[68%] truncate text-right font-mono text-sm ${emphasis ? "text-lg font-black text-foreground" : "font-bold text-foreground"}`} title={value}>{value}</span>
+    <div className="flex items-center justify-between gap-3 border-t border-border/60 px-3 py-2 first:border-t-0 sm:px-5 sm:py-3 sm:first:border-t-0">
+      <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground sm:text-[10px]">{label}</span>
+      <span className={`max-w-[68%] truncate text-right font-mono text-xs sm:text-sm ${emphasis ? "text-sm font-black text-foreground sm:text-lg" : "font-bold text-foreground"}`} title={value}>{value}</span>
     </div>
   );
 }
@@ -331,7 +331,7 @@ function StatCard({ title, value, icon, color }: { title: string; value: number 
 }
 
 function StatusBadge({ status }: { status: string }) {
-  let cls = "uppercase text-[9px] font-display font-bold tracking-widest px-2 py-1 rounded-lg border-2 ";
+  let cls = "uppercase text-[8px] font-display font-bold tracking-widest px-2 py-0.5 rounded-lg border-2 sm:text-[9px] sm:py-1 ";
   if (status === "success" || status === "paid" || status === "completed") cls += "bg-emerald-500/10 text-emerald-300 border-emerald-500/20";
   else if (status === "failed" || status === "expired") cls += "bg-destructive/10 text-destructive border-destructive/20";
   else if (status === "pending") cls += "bg-amber-500/10 text-amber-300 border-amber-500/20";
