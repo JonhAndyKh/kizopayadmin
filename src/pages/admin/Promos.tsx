@@ -88,19 +88,19 @@ export default function PromosPage() {
 
   return (
     <AdminLayout>
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-7 sm:mb-8">
+      <div className="flex flex-col items-stretch gap-3 mb-5 sm:flex-row sm:items-start sm:justify-between sm:mb-8">
         <div>
-          <h1 className="text-3xl font-display font-black uppercase tracking-tight">Promo Codes</h1>
+          <h1 className="text-2xl sm:text-3xl font-display font-black uppercase tracking-tight">Promo Codes</h1>
           <p className="text-muted-foreground text-sm mt-1">Discount codes for customers</p>
         </div>
-        <Button onClick={() => { setIsCreating(true); setEditing(null); setForm({ ...EMPTY }); }} className="rounded-lg font-display font-bold uppercase tracking-wide text-xs bg-primary text-white">
+        <Button onClick={() => { setIsCreating(true); setEditing(null); setForm({ ...EMPTY }); }} className="w-full rounded-lg font-display font-bold uppercase tracking-wide text-xs bg-primary text-white sm:w-auto">
           <Plus className="w-4 h-4 mr-1" /> New Code
         </Button>
       </div>
 
       {/* Form */}
       {isCreating && (
-        <div className="mb-8 bg-card border border-primary/30 rounded-xl p-4 sm:p-6">
+        <div className="mb-6 bg-card border border-primary/30 rounded-xl p-3 sm:mb-8 sm:p-6">
           <h2 className="font-display font-black uppercase tracking-wider text-sm mb-5">{editing ? "Edit Promo Code" : "New Promo Code"}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -153,8 +153,41 @@ export default function PromosPage() {
           <p className="font-display font-bold uppercase tracking-wide text-muted-foreground">No promo codes yet</p>
         </div>
       ) : (
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
+         <div className="bg-card border border-border rounded-xl overflow-hidden">
+           <div className="grid gap-2.5 p-2.5 sm:hidden">
+             {promos.map((p) => (
+               <div key={p._id} className="rounded-xl border border-border/80 bg-background/45 p-3">
+                 <div className="flex items-start justify-between gap-2">
+                   <div className="min-w-0">
+                     <div className="flex items-center gap-1.5">
+                       <code className="max-w-[65%] truncate rounded-lg bg-primary/10 px-2 py-0.5 font-mono text-xs font-black text-primary">{p.code}</code>
+                       <button onClick={() => { navigator.clipboard.writeText(p.code); }} className="text-muted-foreground/50 hover:text-muted-foreground" aria-label={`Copy ${p.code}`}>
+                         <Copy className="h-3 w-3" />
+                       </button>
+                     </div>
+                     <p className="mt-1 text-xs text-muted-foreground">{p.discountType === "percent" ? `${p.discountValue}% discount` : `$${p.discountValue.toFixed(2)} discount`}</p>
+                   </div>
+                   <button onClick={() => toggleMutation.mutate({ id: p._id, isActive: !p.isActive })}>
+                     <span className={`whitespace-nowrap text-[8px] font-display font-bold uppercase tracking-widest px-2 py-0.5 rounded-lg border ${p.isActive ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-muted text-muted-foreground border-border"}`}>
+                       {p.isActive ? "Active" : "Off"}
+                     </span>
+                   </button>
+                 </div>
+                 <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border/60 pt-2.5 text-xs">
+                   <div><p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Min order</p><p className="mt-0.5 font-medium">{p.minOrderUsd > 0 ? `$${p.minOrderUsd.toFixed(2)}` : "—"}</p></div>
+                   <div><p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Uses</p><p className="mt-0.5 font-mono font-medium">{p.usedCount}{p.maxUses > 0 ? ` / ${p.maxUses}` : ""}</p></div>
+                   <div><p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Expires</p><p className="mt-0.5 truncate font-medium">{p.expiresAt ? format(new Date(p.expiresAt), "MMM d, yyyy") : "Never"}</p></div>
+                 </div>
+                 <div className="mt-2 flex justify-end gap-1 border-t border-border/60 pt-2">
+                   <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(p)}><Pencil className="h-3 w-3" /></Button>
+                   <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => { if(confirm("Delete this promo code?")) deleteMutation.mutate(p._id); }}>
+                     <Trash2 className="h-3 w-3" />
+                   </Button>
+                 </div>
+               </div>
+             ))}
+           </div>
+           <div className="hidden overflow-x-auto sm:block">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b border-border">
                 <tr>

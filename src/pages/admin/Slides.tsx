@@ -96,19 +96,19 @@ export default function SlidesPage() {
 
   return (
     <AdminLayout>
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-7 sm:mb-8">
+      <div className="flex flex-col items-stretch gap-3 mb-5 sm:flex-row sm:items-start sm:justify-between sm:mb-8">
         <div>
-          <h1 className="text-3xl font-display font-black uppercase tracking-tight">Promo Slides</h1>
+          <h1 className="text-2xl sm:text-3xl font-display font-black uppercase tracking-tight">Promo Slides</h1>
           <p className="text-muted-foreground text-sm mt-1">Homepage banner carousel</p>
         </div>
-        <Button onClick={() => { setIsCreating(true); setEditing(null); setForm({ ...EMPTY_SLIDE }); }} className="rounded-lg font-display font-bold uppercase tracking-wide text-xs bg-primary text-white">
+        <Button onClick={() => { setIsCreating(true); setEditing(null); setForm({ ...EMPTY_SLIDE }); }} className="w-full rounded-lg font-display font-bold uppercase tracking-wide text-xs bg-primary text-white sm:w-auto">
           <Plus className="w-4 h-4 mr-1" /> New Slide
         </Button>
       </div>
 
       {/* Form */}
       {isCreating && (
-        <div className="mb-8 bg-card border border-primary/30 rounded-xl p-4 sm:p-6">
+        <div className="mb-6 bg-card border border-primary/30 rounded-xl p-3 sm:mb-8 sm:p-6">
           <h2 className="font-display font-black uppercase tracking-wider text-sm mb-5">{editing ? "Edit Slide" : "New Slide"}</h2>
           <div className="space-y-4">
             <div className="space-y-1.5">
@@ -140,8 +140,8 @@ export default function SlidesPage() {
         </div>
       ) : (
         <div className="space-y-3">
-           {slides.map((slide) => (
-             <div key={slide._id} className="bg-card border border-border rounded-xl flex flex-wrap items-center gap-3 p-3 sm:p-4 hover:bg-muted/20 transition-colors">
+             {slides.map((slide) => (
+              <div key={slide._id} className="grid grid-cols-[auto_48px_minmax(0,1fr)] items-center gap-2 bg-card border border-border rounded-xl p-3 sm:flex sm:gap-3 sm:p-4 hover:bg-muted/20 transition-colors">
               <GripVertical className="w-4 h-4 text-muted-foreground/30 shrink-0" />
               <div className="w-16 h-10 bg-muted rounded-xl overflow-hidden shrink-0">
                 {slide.imageUrl && <img src={slide.imageUrl} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />}
@@ -150,7 +150,7 @@ export default function SlidesPage() {
                 <p className="font-display font-bold text-sm uppercase tracking-wide truncate">{slide.title}</p>
                 <p className="text-xs text-muted-foreground truncate">{slide.subtitle}</p>
               </div>
-               <div className="ml-auto flex items-center gap-2 shrink-0">
+                <div className="col-span-3 ml-auto flex items-center gap-1.5 shrink-0 sm:col-span-1 sm:gap-2">
                 <span className={`text-[9px] font-display font-bold uppercase tracking-widest px-2 py-1 rounded-lg border ${slide.isActive ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-muted text-muted-foreground border-border"}`}>
                   {slide.isActive ? "Active" : "Hidden"}
                 </span>

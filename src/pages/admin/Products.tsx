@@ -78,12 +78,12 @@ export default function ProductsPage() {
 
   return (
     <AdminLayout>
-      <div className="mb-7 sm:mb-8">
-        <h1 className="text-3xl font-display font-black uppercase tracking-tight">Products</h1>
+      <div className="mb-5 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-display font-black uppercase tracking-tight">Products</h1>
         <p className="text-muted-foreground text-sm mt-1">Override names, prices and visibility per product</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
         {/* Game list */}
         <div className="lg:col-span-1">
           <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -127,16 +127,16 @@ export default function ProductsPage() {
             <div className="space-y-2">{[1,2,3,4,5].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
           ) : (
             <div className="bg-card border border-border rounded-xl overflow-hidden">
-              <div className="bg-muted/60 border-b border-border px-4 py-3 flex items-center justify-between">
+              <div className="bg-muted/60 border-b border-border px-3 py-3 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between sm:px-4">
                 <span className="font-display font-black uppercase tracking-widest text-xs">Products ({filteredProducts.length})</span>
                 <div className="relative">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-white/40" />
-                  <input placeholder="Filter..." value={search} onChange={(e) => setSearch(e.target.value)} className="bg-background/30 border border-border/40 rounded pl-7 pr-3 py-1 text-xs text-foreground placeholder:text-muted-foreground w-36" />
+                  <input placeholder="Filter..." value={search} onChange={(e) => setSearch(e.target.value)} className="bg-background/30 border border-border/40 rounded pl-7 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground w-full sm:w-36" />
                 </div>
               </div>
               <div className="divide-y divide-border/50 max-h-[600px] overflow-y-auto">
                 {filteredProducts.map((p) => (
-                  <div key={p.productCode} className={`p-4 transition-colors ${!p.isVisible ? "opacity-50 bg-muted/20" : "hover:bg-muted/10"}`}>
+                  <div key={p.productCode} className={`p-3 sm:p-4 transition-colors ${!p.isVisible ? "opacity-50 bg-muted/20" : "hover:bg-muted/10"}`}>
                     {editing?.code === p.productCode ? (
                       <div className="space-y-3">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -196,12 +196,12 @@ export default function ProductsPage() {
                           </Button>
                         </div>
                       ) : null}
-                      <div className="flex flex-wrap items-center gap-3">
+                       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                         {/* Clickable image slot */}
                         <button
                           title="Set package image"
                           onClick={() => { setImgEditing(p.productCode); setImgDraft((d) => ({ ...d, [p.productCode]: p.imageUrl ?? "" })); }}
-                          className="w-10 h-10 rounded-lg shrink-0 border border-dashed border-border hover:border-primary/50 overflow-hidden flex items-center justify-center bg-muted transition-colors group relative"
+                           className="w-9 h-9 rounded-lg shrink-0 border border-dashed border-border hover:border-primary/50 overflow-hidden flex items-center justify-center bg-muted transition-colors group relative sm:w-10 sm:h-10"
                         >
                           {p.imageUrl
                             ? <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
@@ -211,7 +211,7 @@ export default function ProductsPage() {
                             <Pencil className="w-3 h-3 text-white" />
                           </div>
                         </button>
-                         <div className="min-w-0 flex-1 basis-[calc(100%-5rem)]">
+                          <div className="min-w-0 flex-1 basis-[calc(100%-4rem)] sm:basis-[calc(100%-5rem)]">
                           <div className="flex items-center gap-2">
                             <p className="font-display font-bold text-sm uppercase tracking-wide">{p.name}</p>
                             {p.hasOverride && <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-lg font-bold uppercase tracking-wide">Modified</span>}
