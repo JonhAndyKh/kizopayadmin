@@ -18,6 +18,7 @@ import GamesPage from '@/pages/admin/Games';
 import SlidesPage from '@/pages/admin/Slides';
 import PromosPage from '@/pages/admin/Promos';
 import ProductsPage from '@/pages/admin/Products';
+import UploadPage from '@/pages/Upload';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 
 const queryClient = new QueryClient();
@@ -51,6 +52,9 @@ function Router() {
         </Route>
         <Route path="/admin/products">
           {() => <PrivateRoute component={ProductsPage} />}
+        </Route>
+        <Route path="/upload">
+          {() => <PrivateRoute component={UploadPage} />}
         </Route>
         <Route component={NotFound} />
       </Switch>

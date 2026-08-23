@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Package, Eye, EyeOff, Pencil, RotateCcw, Search, ImagePlus, Check, X } from "lucide-react";
+import { Package, Eye, EyeOff, Pencil, RotateCcw, Search, ImagePlus, Check, X, Upload } from "lucide-react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
 interface AdminProduct {
@@ -79,7 +80,12 @@ export default function ProductsPage() {
   return (
     <AdminLayout>
       <div className="mb-5 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-display font-black uppercase tracking-tight">Products</h1>
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-2xl sm:text-3xl font-display font-black uppercase tracking-tight">Products</h1>
+          <Button asChild variant="outline" size="sm" className="shrink-0 font-display text-[10px] font-bold uppercase tracking-wide">
+            <Link href="/upload"><Upload className="mr-1.5 h-3.5 w-3.5" /> Upload</Link>
+          </Button>
+        </div>
         <p className="text-muted-foreground text-sm mt-1">Override names, prices and visibility per product</p>
       </div>
 
