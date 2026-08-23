@@ -70,6 +70,9 @@ export default function UploadPage() {
         </div>
 
         <div className="rounded-xl border border-primary/20 bg-card p-4 sm:p-6">
+          <div className="mb-4 rounded-lg border border-primary/15 bg-primary/5 p-3 text-xs text-muted-foreground">
+            For GitHub-hosted images, add the file to the repository’s <code className="font-mono text-primary">Upload/</code> folder. It will be available at <code className="font-mono text-primary">https://kizopay.cyou/upload/filename.png</code> after deployment.
+          </div>
           <label
             htmlFor="product-image"
             className="flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/20 px-4 text-center transition-colors hover:border-primary/50 hover:bg-primary/5"
