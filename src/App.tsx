@@ -19,6 +19,7 @@ import SlidesPage from '@/pages/admin/Slides';
 import PromosPage from '@/pages/admin/Promos';
 import ProductsPage from '@/pages/admin/Products';
 import UploadPage from '@/pages/Upload';
+import AnnouncementsPage from '@/pages/admin/Announcements';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 
 const queryClient = new QueryClient();
@@ -46,6 +47,9 @@ function Router() {
         </Route>
         <Route path="/admin/slides">
           {() => <PrivateRoute component={SlidesPage} />}
+        </Route>
+        <Route path="/admin/announcements">
+          {() => <PrivateRoute component={AnnouncementsPage} />}
         </Route>
         <Route path="/admin/promos">
           {() => <PrivateRoute component={PromosPage} />}
