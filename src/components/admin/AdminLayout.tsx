@@ -2,7 +2,7 @@ import { type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Image, Tag, Package, LogOut, ChevronRight, Gamepad2, Megaphone } from "lucide-react";
+import { LayoutDashboard, Image, Tag, Package, LogOut, ChevronRight, Gamepad2, Megaphone, Radio } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 
 const NAV = [
@@ -10,6 +10,7 @@ const NAV = [
   { href: "/admin/games", label: "Games", icon: Gamepad2 },
   { href: "/admin/slides", label: "Promo Slides", icon: Image },
   { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
+  { href: "/admin/live-events", label: "Live Events", icon: Radio },
   { href: "/admin/promos", label: "Promo Codes", icon: Tag },
   { href: "/admin/products", label: "Products", icon: Package },
 ];
