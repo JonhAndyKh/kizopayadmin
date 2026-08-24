@@ -12,21 +12,15 @@ import { useToast } from "@/hooks/use-toast";
 
 interface LiveEvent {
   _id: string;
-  title: string;
-  price: string;
   imageUrl: string;
   gameCode?: string;
-  ctaText: string;
   isActive: boolean;
   order: number;
 }
 
 const EMPTY_EVENT = {
-  title: "",
-  price: "",
   imageUrl: "",
   gameCode: "",
-  ctaText: "Buy Now",
   isActive: true,
   order: 0,
 };
@@ -111,11 +105,8 @@ export default function LiveEventsPage() {
   const openEdit = (event: LiveEvent) => {
     setEditing(event);
     setForm({
-      title: event.title,
-      price: event.price,
       imageUrl: event.imageUrl,
       gameCode: event.gameCode ?? "",
-      ctaText: event.ctaText,
       isActive: event.isActive,
       order: event.order,
     });
@@ -148,15 +139,7 @@ export default function LiveEventsPage() {
           <h2 className="mb-5 font-display text-sm font-black uppercase tracking-wider">
             {editing ? "Edit Live Event" : "New Live Event"}
           </h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label className="font-display text-xs font-bold uppercase tracking-wider">Title *</Label>
-              <Input value={form.title} onChange={field("title")} placeholder="FF Monthly Pass" className="border-none bg-muted" />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="font-display text-xs font-bold uppercase tracking-wider">Price *</Label>
-              <Input value={form.price} onChange={field("price")} placeholder="7.48$" className="border-none bg-muted" />
-            </div>
+           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-1.5 md:col-span-2">
               <Label className="font-display text-xs font-bold uppercase tracking-wider">Card Image URL *</Label>
               <Input value={form.imageUrl} onChange={field("imageUrl")} placeholder="https://... or /api/uploads/..." className="border-none bg-muted" />
@@ -167,12 +150,8 @@ export default function LiveEventsPage() {
               </div>
             )}
             <div className="space-y-1.5">
-              <Label className="font-display text-xs font-bold uppercase tracking-wider">Game Code (optional)</Label>
+               <Label className="font-display text-xs font-bold uppercase tracking-wider">Game Code</Label>
               <Input value={form.gameCode} onChange={field("gameCode")} placeholder="freefire" className="border-none bg-muted" />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="font-display text-xs font-bold uppercase tracking-wider">Button Label</Label>
-              <Input value={form.ctaText} onChange={field("ctaText")} placeholder="Buy Now" className="border-none bg-muted" />
             </div>
             <div className="space-y-1.5">
               <Label className="font-display text-xs font-bold uppercase tracking-wider">Display Order</Label>
@@ -184,7 +163,7 @@ export default function LiveEventsPage() {
             </label>
           </div>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Button onClick={() => saveMutation.mutate(form)} disabled={!form.title || !form.price || !form.imageUrl || saveMutation.isPending} className="rounded-lg bg-primary font-display text-xs font-bold uppercase tracking-wide text-white">
+             <Button onClick={() => saveMutation.mutate(form)} disabled={!form.imageUrl || saveMutation.isPending} className="rounded-lg bg-primary font-display text-xs font-bold uppercase tracking-wide text-white">
               {saveMutation.isPending ? "Saving..." : editing ? "Update Event" : "Create Event"}
             </Button>
             <Button onClick={closeForm} variant="ghost" className="rounded-lg font-display text-xs font-bold uppercase tracking-wide">Cancel</Button>
@@ -209,8 +188,8 @@ export default function LiveEventsPage() {
                 <img src={event.imageUrl} alt="" className="h-full w-full object-cover" onError={(image) => { image.currentTarget.style.display = "none"; }} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-display text-sm font-bold uppercase tracking-wide">{event.title}</p>
-                <p className="truncate text-xs text-accent">{event.price}{event.gameCode ? ` · ${event.gameCode}` : ""}</p>
+                 <p className="truncate font-display text-sm font-bold uppercase tracking-wide">Live Event</p>
+                 <p className="truncate text-xs text-accent">{event.gameCode || "No game code"}</p>
               </div>
               <div className="col-span-3 ml-auto flex shrink-0 items-center gap-1.5 sm:col-span-1 sm:gap-2">
                 <span className={`rounded-lg border px-2 py-1 font-display text-[9px] font-bold uppercase tracking-widest ${event.isActive ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-border bg-muted text-muted-foreground"}`}>
