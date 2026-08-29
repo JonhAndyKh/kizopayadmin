@@ -283,6 +283,7 @@ router.post("/orders", async (req, res) => {
 // ─── GET /orders/summary (admin only) ─────────────────────────────────────────
 router.get("/orders/summary", requireAdmin, async (req, res) => {
   try {
+    await ensureOrdersTable();
     const [totals, recent, profitResult] = await Promise.all([
       db
         .select({
@@ -404,6 +405,7 @@ router.get("/orders/list", requireAdmin, async (req, res) => {
   const offset = (page - 1) * pageSize;
 
   try {
+    await ensureOrdersTable();
     const [rows, totalResult] = await Promise.all([
       db
         .select()
