@@ -75,6 +75,7 @@ interface OrderListResponse {
     hasNextPage: boolean;
     hasPreviousPage: boolean;
   };
+  legacyFallback?: boolean;
 }
 
 interface ResellerBalance {
@@ -112,7 +113,36 @@ function useOrderList(range: OrderRange, search: string, status: string, page: n
       const rangeDates = getRangeDates(range);
       if (rangeDates.from) params.set("from", rangeDates.from);
       if (rangeDates.to) params.set("to", rangeDates.to);
-      return authedJson<OrderListResponse>(`/api/orders/list?${params.toString()}`);
+      try {
+        return await authedJson<OrderListResponse>(`/api/orders/list?${params.toString()}`);
+      } catch (error) {
+        // Older deployments do not have /orders/list yet. Express then treats
+        // "list" as an order ID and returns "Order not found". Keep the admin
+        // usable until the API deployment is refreshed, while preserving the
+        // full-history endpoint for current deployments.
+        const isLegacyListEndpoint = error instanceof ApiRequestError
+          && error.status === 404
+          && error.message.toLowerCase().includes("order not found");
+        if (!isLegacyListEndpoint || range !== "all" || search.trim() || status !== "all" || page !== 1) {
+          throw error;
+        }
+
+        const summary = await authedJson<OrderSummary>("/api/orders/summary");
+        const pageSize = summary.recentOrders.length || 20;
+        const totalPages = Math.max(1, Math.ceil(summary.total / pageSize));
+        return {
+          orders: summary.recentOrders,
+          pagination: {
+            page: 1,
+            pageSize,
+            total: summary.total,
+            totalPages,
+            hasNextPage: totalPages > 1,
+            hasPreviousPage: false,
+          },
+          legacyFallback: true,
+        };
+      }
     },
     refetchInterval: 10000,
   });
@@ -204,6 +234,12 @@ export default function OrdersPage() {
         <OrdersSkeleton />
       ) : (
         <>
+          {orderList.legacyFallback && (
+            <div className="mb-4 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800">
+              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>The API is still on an older deployment, so this view is showing the latest transactions. Redeploy the API to enable full history and filters.</p>
+            </div>
+          )}
           <section className="mb-5 grid grid-cols-2 gap-3 sm:mb-6 sm:grid-cols-4 sm:gap-4">
             <SummaryCard title="Total orders" value={summary.total} caption="All time" icon={<Zap />} tone="blue" />
             <SummaryCard title="Total spent" value={`$${totalSpent.toFixed(2)}`} caption={summary.total ? `Avg $${(totalSpent / summary.total).toFixed(2)} / order` : "All time"} icon={<DollarSign />} tone="teal" />
