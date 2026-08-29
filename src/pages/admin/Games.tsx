@@ -215,8 +215,9 @@ export default function GamesPage() {
 
   return (
     <AdminLayout>
-      <div className="mb-5 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-display font-black uppercase tracking-tight">Games</h1>
+      <div className="admin-reveal mb-5 sm:mb-8">
+        <p className="eyebrow text-primary">Catalog controls</p>
+        <h1 className="mt-2 text-2xl font-display font-bold tracking-tight sm:text-3xl">Games</h1>
         <p className="text-muted-foreground text-sm mt-1">
           Control which games are visible in the store.
           Hidden games won't appear for customers.
@@ -242,7 +243,7 @@ export default function GamesPage() {
       </div>
 
       {showCustomForm && (
-        <div className="mb-6 rounded-xl border border-primary/20 bg-card p-3 sm:mb-8 sm:p-5">
+        <div className="admin-panel mb-6 rounded-xl border border-primary/20 p-3 sm:mb-8 sm:p-5">
           <h2 className="font-display font-bold text-lg">Add custom game</h2>
           <p className="text-xs text-muted-foreground mt-1 mb-5">
             Map each package to the exact Bay2Game product code used for fulfillment.
@@ -351,15 +352,15 @@ export default function GamesPage() {
 
       {/* Stats row */}
       <div className="grid grid-cols-2 gap-2.5 mb-6 sm:grid-cols-3 sm:gap-4 sm:mb-8">
-        <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
+        <div className="admin-panel rounded-xl p-3 sm:p-4">
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Total Games</p>
           <p className="text-3xl font-black font-display text-foreground">{games.length}</p>
         </div>
-        <div className="bg-card border border-emerald-500/20 rounded-xl p-3 sm:p-4">
+        <div className="admin-panel rounded-xl border-emerald-500/20 p-3 sm:p-4">
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Visible</p>
           <p className="text-3xl font-black font-display text-emerald-500">{visibleCount}</p>
         </div>
-        <div className="bg-card border border-destructive/20 rounded-xl p-3 sm:p-4">
+        <div className="admin-panel rounded-xl border-destructive/20 p-3 sm:p-4">
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Hidden</p>
           <p className="text-3xl font-black font-display text-destructive">{hiddenCount}</p>
         </div>

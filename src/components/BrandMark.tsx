@@ -1,6 +1,7 @@
 interface BrandMarkProps {
   size?: "sm" | "md" | "login";
   className?: string;
+  inverse?: boolean;
 }
 
 const sizeStyles = {
@@ -18,7 +19,7 @@ const sizeStyles = {
   },
 } as const;
 
-export function BrandMark({ size = "sm", className = "" }: BrandMarkProps) {
+export function BrandMark({ size = "sm", className = "", inverse = false }: BrandMarkProps) {
   const styles = sizeStyles[size];
 
   return (
@@ -28,8 +29,8 @@ export function BrandMark({ size = "sm", className = "" }: BrandMarkProps) {
         alt="KizoPay logo"
         className={`${styles.logo} shrink-0 object-contain mix-blend-screen`}
       />
-      <span className={`${styles.name} font-display font-black tracking-wider text-white`}>
-        Kizo<span className="text-primary">Pay</span>
+       <span className={`${styles.name} font-display font-black tracking-wider ${inverse ? "text-white" : "text-foreground"}`}>
+         Kizo<span className={inverse ? "text-amber-300" : "text-primary"}>Pay</span>
       </span>
     </span>
   );

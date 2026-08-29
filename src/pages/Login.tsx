@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, ShieldAlert } from "lucide-react";
+import { Activity, ArrowLeft, Loader2, ShieldAlert, ShieldCheck } from "lucide-react";
 import { Link } from "wouter";
 import { BrandMark } from "@/components/BrandMark";
 
@@ -31,57 +31,76 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-background flex items-center justify-center px-4 relative">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30 bg-grid-subtle" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
+    <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-background px-4 py-10">
+      <div className="pointer-events-none absolute inset-0 bg-grid-subtle opacity-70" />
+      <div className="pointer-events-none absolute -right-32 top-0 h-[30rem] w-[30rem] rounded-full bg-primary/5 blur-[110px]" />
+      <div className="pointer-events-none absolute -bottom-40 -left-20 h-80 w-80 rounded-full bg-accent/10 blur-[100px]" />
 
-      <div className="relative z-10 w-full max-w-sm">
-        <Link href="/" className="flex items-center gap-3 justify-center mb-10 group">
-          <BrandMark size="login" className="transition-transform group-hover:scale-[1.02]" />
-        </Link>
-
-        <div className="bg-card border border-white/5 rounded-2xl p-8 shadow-2xl">
-          <div className="mb-8">
-            <h1 className="text-2xl font-display font-black tracking-tight text-foreground">Admin Login</h1>
-            <p className="text-sm text-muted-foreground mt-1.5 font-medium">Access the command center</p>
+      <div className="relative z-10 grid w-full max-w-4xl overflow-hidden rounded-2xl border border-border bg-card admin-shadow md:grid-cols-[1fr_1.1fr]">
+        <div className="hidden flex-col justify-between bg-[#17283d] p-9 text-slate-200 md:flex">
+          <div>
+            <BrandMark size="md" inverse />
+            <div className="mt-20 max-w-xs">
+              <p className="eyebrow text-amber-300">Operator access</p>
+              <h2 className="mt-3 font-display text-3xl font-bold leading-tight text-white">Keep every top-up moving.</h2>
+              <p className="mt-4 text-sm leading-6 text-slate-300/70">Monitor your balance, manage the storefront, and resolve order flow from one quiet workspace.</p>
+            </div>
           </div>
+          <div className="flex items-center gap-2 border-t border-white/10 pt-5 text-xs text-slate-400">
+            <Activity className="h-3.5 w-3.5 text-emerald-400" /> KizoPay systems operational
+          </div>
+        </div>
 
+        <div className="p-6 sm:p-9">
+          <div className="mb-8 md:hidden">
+            <BrandMark size="md" />
+          </div>
+          <div className="mb-8">
+            <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary">
+              <ShieldCheck className="h-4 w-4" />
+            </div>
+            <p className="eyebrow text-primary">Secure operator portal</p>
+            <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-foreground">Sign in to KizoPay</h1>
+            <p className="mt-1.5 text-sm font-medium text-muted-foreground">Use your reseller credentials to continue.</p>
+          </div>
           {error && (
-            <div className="mb-6 flex items-center gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive">
+            <div className="mb-6 flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-destructive">
               <ShieldAlert className="w-4 h-4 shrink-0" />
-              <p className="text-xs font-bold font-display uppercase tracking-wider">{error}</p>
+              <p className="text-xs font-bold">{error}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label className="font-display font-bold uppercase text-[10px] tracking-wider text-muted-foreground">Email</Label>
+              <Label className="eyebrow text-muted-foreground">Email</Label>
               <Input
                 type="email"
                 placeholder="admin@kizopay.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 required
                 autoFocus
-                className="bg-background border-border h-12 font-medium rounded-lg focus:ring-1 focus:ring-primary/30"
+                className="h-11 rounded-lg border-border bg-background font-medium focus-visible:ring-1 focus-visible:ring-primary/30"
               />
             </div>
             <div className="space-y-2">
-              <Label className="font-display font-bold uppercase text-[10px] tracking-wider text-muted-foreground">Password</Label>
+              <Label className="eyebrow text-muted-foreground">Password</Label>
               <Input
                 type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
                 required
-                className="bg-background border-border h-12 font-medium rounded-lg focus:ring-1 focus:ring-primary/30"
+                className="h-11 rounded-lg border-border bg-background font-medium focus-visible:ring-1 focus-visible:ring-primary/30"
               />
             </div>
             <Button
               type="submit"
               disabled={isLoading}
               size="lg"
-              className="w-full h-12 text-xs font-display font-bold uppercase tracking-widest rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground mt-4 shadow-lg shadow-primary/20 transition-all"
+              className="mt-4 h-11 w-full rounded-lg bg-primary text-xs font-display font-bold uppercase tracking-[0.14em] text-primary-foreground shadow-md shadow-primary/15 transition-colors hover:bg-primary/90"
             >
               {isLoading ? (
                 <><Loader2 className="mr-2 w-4 h-4 animate-spin" /> Authenticating...</>
@@ -90,11 +109,11 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
+          <div className="mt-7 flex items-center justify-between border-t border-border pt-5 text-xs font-medium text-muted-foreground">
+            <span className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-emerald-600" /> Protected session</span>
+            <Link href="/" className="flex items-center gap-1 hover:text-foreground transition-colors"><ArrowLeft className="h-3.5 w-3.5" /> Back to store</Link>
+          </div>
         </div>
-
-        <p className="text-center text-xs text-muted-foreground mt-8 font-medium">
-          <Link href="/" className="hover:text-foreground transition-colors">← Back to store</Link>
-        </p>
       </div>
     </div>
   );

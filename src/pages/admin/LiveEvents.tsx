@@ -121,9 +121,10 @@ export default function LiveEventsPage() {
 
   return (
     <AdminLayout>
-      <div className="mb-5 flex flex-col items-stretch gap-3 sm:mb-8 sm:flex-row sm:items-start sm:justify-between">
+      <div className="admin-reveal mb-5 flex flex-col items-stretch gap-3 sm:mb-8 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-black uppercase tracking-tight sm:text-3xl">Live Events</h1>
+          <p className="eyebrow text-primary">Storefront content</p>
+          <h1 className="mt-2 font-display text-2xl font-bold tracking-tight sm:text-3xl">Live Events</h1>
           <p className="mt-1 text-sm text-muted-foreground">Cards shown in the NEW EVENTS LIVE carousel</p>
         </div>
         <Button
@@ -135,7 +136,7 @@ export default function LiveEventsPage() {
       </div>
 
       {isCreating && (
-        <div className="mb-6 rounded-xl border border-primary/30 bg-card p-3 sm:mb-8 sm:p-6">
+        <div className="admin-panel mb-6 rounded-xl border border-primary/30 p-3 sm:mb-8 sm:p-6">
           <h2 className="mb-5 font-display text-sm font-black uppercase tracking-wider">
             {editing ? "Edit Live Event" : "New Live Event"}
           </h2>
@@ -180,7 +181,7 @@ export default function LiveEventsPage() {
           <p className="mt-1 text-sm text-muted-foreground">Create a card to show it below the homepage slideshow.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+         <div className="admin-reveal admin-reveal-delay-1 space-y-3">
           {events.map((event) => (
             <div key={event._id} className="grid grid-cols-[auto_72px_minmax(0,1fr)] items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:bg-muted/20 sm:flex sm:p-4">
               <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground/30" />

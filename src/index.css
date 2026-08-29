@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @plugin "@tailwindcss/typography";
@@ -22,9 +22,11 @@
 
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-border: hsl(var(--primary-border));
 
   --color-secondary: hsl(var(--secondary));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary-border: hsl(var(--secondary-border));
 
   --color-muted: hsl(var(--muted));
   --color-muted-foreground: hsl(var(--muted-foreground));
@@ -34,6 +36,7 @@
 
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive-border: hsl(var(--destructive));
 
   --font-sans: var(--app-font-sans);
   --font-display: var(--app-font-display);
@@ -45,67 +48,120 @@
 }
 
 :root {
-  /* Deep Gaming Dark */
-  --background: 240 18% 5%;
-  --foreground: 240 10% 97%;
-  --border: 240 15% 13%;
-  --input: 240 15% 13%;
-  --ring: 265 85% 65%;
+  /* Harbor control room: pale mineral surfaces, ink navy, brass signal */
+  --background: 216 30% 95%;
+  --foreground: 219 34% 17%;
+  --border: 216 22% 86%;
+  --input: 216 22% 82%;
+  --ring: 211 60% 42%;
 
-  --card: 240 18% 9%;
-  --card-foreground: 240 10% 97%;
-  --card-border: 240 15% 14%;
+  --card: 220 28% 99%;
+  --card-foreground: 219 34% 17%;
+  --card-border: 216 22% 87%;
 
-  --popover: 240 18% 9%;
-  --popover-foreground: 240 10% 97%;
-  --popover-border: 240 15% 14%;
+  --popover: 220 28% 99%;
+  --popover-foreground: 219 34% 17%;
+  --popover-border: 216 22% 87%;
 
-  --primary: 265 85% 65%;       /* Vivid Violet */
-  --primary-foreground: 0 0% 100%;
+  --primary: 211 60% 34%;
+  --primary-foreground: 216 30% 98%;
+  --primary-border: 211 60% 29%;
 
-  --secondary: 240 15% 14%;
-  --secondary-foreground: 240 10% 97%;
+  --secondary: 214 24% 90%;
+  --secondary-foreground: 219 34% 20%;
+  --secondary-border: 216 22% 82%;
 
-  --muted: 240 18% 11%;
-  --muted-foreground: 240 10% 55%;
+  --muted: 214 27% 92%;
+  --muted-foreground: 216 14% 45%;
 
-  --accent: 320 80% 62%;        /* Hot Pink accent */
-  --accent-foreground: 0 0% 100%;
+  --accent: 36 78% 46%;
+  --accent-foreground: 35 45% 12%;
 
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 100%;
+  --destructive: 2 62% 46%;
+  --destructive-foreground: 0 0% 98%;
 
-  --app-font-sans: 'Outfit', sans-serif;
+  --app-font-sans: 'DM Sans', sans-serif;
   --app-font-display: 'Space Grotesk', sans-serif;
 
-  --radius: 0.75rem;
+  --radius: 0.7rem;
+}
+
+.dark {
+  --background: 219 31% 11%;
+  --foreground: 214 28% 94%;
+  --border: 216 20% 22%;
+  --input: 216 20% 25%;
+  --ring: 36 78% 52%;
+  --card: 219 28% 15%;
+  --card-foreground: 214 28% 94%;
+  --card-border: 216 20% 23%;
+  --popover: 219 28% 15%;
+  --popover-foreground: 214 28% 94%;
+  --popover-border: 216 20% 23%;
+  --primary: 36 78% 52%;
+  --primary-foreground: 219 34% 13%;
+  --primary-border: 36 78% 46%;
+  --secondary: 216 20% 22%;
+  --secondary-foreground: 214 28% 94%;
+  --secondary-border: 216 20% 28%;
+  --muted: 216 20% 19%;
+  --muted-foreground: 216 14% 65%;
+  --accent: 183 38% 45%;
+  --accent-foreground: 180 40% 94%;
+  --destructive: 2 62% 55%;
+  --destructive-foreground: 0 0% 98%;
 }
 
 @layer base {
   * { @apply border-border; }
   body {
-    @apply font-sans antialiased bg-background text-foreground selection:bg-primary/30 selection:text-white;
+    @apply font-sans antialiased bg-background text-foreground selection:bg-primary/20 selection:text-foreground;
   }
   h1, h2, h3, h4, h5, h6 { @apply font-display tracking-tight; }
 }
 
 @layer utilities {
-  /* Dot grid background texture */
   .bg-dot-grid {
-    background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
-    background-size: 28px 28px;
+    background-image: radial-gradient(circle, hsl(211 30% 35% / 0.1) 1px, transparent 1px);
+    background-size: 24px 24px;
   }
 
-  /* Neon glow text */
-  .text-glow {
-    text-shadow: 0 0 20px hsl(265 85% 65% / 0.6), 0 0 40px hsl(265 85% 65% / 0.3);
+  .bg-grid-subtle {
+    background-image: linear-gradient(hsl(211 30% 35% / 0.06) 1px, transparent 1px), linear-gradient(90deg, hsl(211 30% 35% / 0.06) 1px, transparent 1px);
+    background-size: 42px 42px;
   }
 
-  /* Card glow on hover */
-  .card-glow:hover {
-    box-shadow: 0 0 0 1px hsl(265 85% 65% / 0.4), 0 8px 32px hsl(265 85% 65% / 0.15);
+  .admin-shadow {
+    box-shadow: 0 10px 28px hsl(219 34% 17% / 0.07), 0 1px 2px hsl(219 34% 17% / 0.05);
+  }
+
+  .admin-panel {
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+    box-shadow: 0 10px 28px hsl(219 34% 17% / 0.06), 0 1px 2px hsl(219 34% 17% / 0.04);
+  }
+
+  .eyebrow {
+    font-family: var(--app-font-display);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    line-height: 1.2;
+    text-transform: uppercase;
   }
 
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .admin-reveal { animation: admin-reveal 420ms ease-out both; }
+  .admin-reveal-delay-1 { animation-delay: 60ms; }
+  .admin-reveal-delay-2 { animation-delay: 120ms; }
+  .admin-reveal-delay-3 { animation-delay: 180ms; }
+}
+
+@keyframes admin-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }

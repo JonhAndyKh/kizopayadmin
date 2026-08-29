@@ -57,16 +57,17 @@ export default function AnnouncementsPage() {
 
   return (
     <AdminLayout>
-      <div className="mb-5 flex flex-col items-stretch justify-between gap-3 sm:mb-8 sm:flex-row sm:items-start">
+      <div className="admin-reveal mb-5 flex flex-col items-stretch justify-between gap-3 sm:mb-8 sm:flex-row sm:items-start">
         <div>
-          <h1 className="text-2xl font-display font-black uppercase tracking-tight sm:text-3xl">Announcements</h1>
+          <p className="eyebrow text-primary">Storefront content</p>
+          <h1 className="mt-2 text-2xl font-display font-bold tracking-tight sm:text-3xl">Announcements</h1>
           <p className="mt-1 text-sm text-muted-foreground">Manage the live left-to-right announcement ticker.</p>
         </div>
         <Button onClick={openNew} className="w-full bg-primary font-display text-xs font-bold uppercase tracking-wide text-white sm:w-auto"><Plus className="mr-1 h-4 w-4" /> New Announcement</Button>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="space-y-3">
+         <div className="admin-reveal admin-reveal-delay-1 space-y-3">
           {isLoading ? <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">Loading announcements...</div> : announcements.length === 0 ? (
             <div className="rounded-xl border-2 border-dashed border-border py-20 text-center"><Megaphone className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" /><p className="font-display font-bold uppercase tracking-wide text-muted-foreground">No announcements yet</p></div>
           ) : announcements.map((item) => (
@@ -84,7 +85,7 @@ export default function AnnouncementsPage() {
           ))}
         </div>
 
-        <div className="h-fit rounded-xl border border-primary/25 bg-card p-4 sm:p-5">
+         <div className="admin-panel admin-reveal admin-reveal-delay-2 h-fit rounded-xl border border-primary/25 p-4 sm:p-5">
           <h2 className="mb-4 font-display text-sm font-black uppercase tracking-widest">{editing ? "Edit announcement" : "New announcement"}</h2>
           <div className="space-y-4">
             <div className="space-y-1.5"><Label className="font-display text-xs font-bold uppercase tracking-wider">Message</Label><textarea value={form.message} maxLength={240} onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))} placeholder="New events live — check out our latest offers!" className="min-h-24 w-full resize-none rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none focus:border-primary" /><p className="text-right text-[10px] text-muted-foreground">{form.message.length}/240</p></div>

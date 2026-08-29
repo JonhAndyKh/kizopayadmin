@@ -79,9 +79,12 @@ export default function ProductsPage() {
 
   return (
     <AdminLayout>
-      <div className="mb-5 sm:mb-8">
+      <div className="admin-reveal mb-5 sm:mb-8">
         <div className="flex items-center justify-between gap-2">
-          <h1 className="text-2xl sm:text-3xl font-display font-black uppercase tracking-tight">Products</h1>
+          <div>
+            <p className="eyebrow text-primary">Catalog controls</p>
+            <h1 className="mt-2 text-2xl font-display font-bold tracking-tight sm:text-3xl">Products</h1>
+          </div>
           <Button asChild variant="outline" size="sm" className="shrink-0 font-display text-[10px] font-bold uppercase tracking-wide">
             <Link href="/upload"><Upload className="mr-1.5 h-3.5 w-3.5" /> Upload</Link>
           </Button>
@@ -92,7 +95,7 @@ export default function ProductsPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
         {/* Game list */}
         <div className="lg:col-span-1">
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="admin-panel overflow-hidden rounded-xl">
             <div className="bg-muted/60 border-b border-border px-4 py-3 flex items-center gap-2">
               <Package className="w-4 h-4 text-accent" />
               <span className="font-display font-black uppercase tracking-widest text-xs">Select Game</span>
@@ -132,7 +135,7 @@ export default function ProductsPage() {
           ) : isLoadingProducts ? (
             <div className="space-y-2">{[1,2,3,4,5].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}</div>
           ) : (
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="admin-panel overflow-hidden rounded-xl">
               <div className="bg-muted/60 border-b border-border px-3 py-3 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between sm:px-4">
                 <span className="font-display font-black uppercase tracking-widest text-xs">Products ({filteredProducts.length})</span>
                 <div className="relative">

@@ -96,9 +96,10 @@ export default function SlidesPage() {
 
   return (
     <AdminLayout>
-      <div className="flex flex-col items-stretch gap-3 mb-5 sm:flex-row sm:items-start sm:justify-between sm:mb-8">
+      <div className="admin-reveal flex flex-col items-stretch gap-3 mb-5 sm:flex-row sm:items-start sm:justify-between sm:mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-display font-black uppercase tracking-tight">Promo Slides</h1>
+          <p className="eyebrow text-primary">Storefront content</p>
+          <h1 className="mt-2 text-2xl font-display font-bold tracking-tight sm:text-3xl">Promo Slides</h1>
           <p className="text-muted-foreground text-sm mt-1">Homepage banner carousel</p>
         </div>
         <Button onClick={() => { setIsCreating(true); setEditing(null); setForm({ ...EMPTY_SLIDE }); }} className="w-full rounded-lg font-display font-bold uppercase tracking-wide text-xs bg-primary text-white sm:w-auto">
@@ -108,7 +109,7 @@ export default function SlidesPage() {
 
       {/* Form */}
       {isCreating && (
-        <div className="mb-6 bg-card border border-primary/30 rounded-xl p-3 sm:mb-8 sm:p-6">
+        <div className="admin-panel mb-6 rounded-xl border border-primary/30 p-3 sm:mb-8 sm:p-6">
           <h2 className="font-display font-black uppercase tracking-wider text-sm mb-5">{editing ? "Edit Slide" : "New Slide"}</h2>
           <div className="space-y-4">
             <div className="space-y-1.5">
@@ -139,7 +140,7 @@ export default function SlidesPage() {
           <p className="font-display font-bold uppercase tracking-wide text-muted-foreground">No slides yet — create your first banner</p>
         </div>
       ) : (
-        <div className="space-y-3">
+         <div className="admin-reveal admin-reveal-delay-1 space-y-3">
              {slides.map((slide) => (
               <div key={slide._id} className="grid grid-cols-[auto_48px_minmax(0,1fr)] items-center gap-2 bg-card border border-border rounded-xl p-3 sm:flex sm:gap-3 sm:p-4 hover:bg-muted/20 transition-colors">
               <GripVertical className="w-4 h-4 text-muted-foreground/30 shrink-0" />

@@ -88,9 +88,10 @@ export default function PromosPage() {
 
   return (
     <AdminLayout>
-      <div className="flex flex-col items-stretch gap-3 mb-5 sm:flex-row sm:items-start sm:justify-between sm:mb-8">
+      <div className="admin-reveal flex flex-col items-stretch gap-3 mb-5 sm:flex-row sm:items-start sm:justify-between sm:mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-display font-black uppercase tracking-tight">Promo Codes</h1>
+          <p className="eyebrow text-primary">Pricing controls</p>
+          <h1 className="mt-2 text-2xl font-display font-bold tracking-tight sm:text-3xl">Promo Codes</h1>
           <p className="text-muted-foreground text-sm mt-1">Discount codes for customers</p>
         </div>
         <Button onClick={() => { setIsCreating(true); setEditing(null); setForm({ ...EMPTY }); }} className="w-full rounded-lg font-display font-bold uppercase tracking-wide text-xs bg-primary text-white sm:w-auto">
@@ -100,7 +101,7 @@ export default function PromosPage() {
 
       {/* Form */}
       {isCreating && (
-        <div className="mb-6 bg-card border border-primary/30 rounded-xl p-3 sm:mb-8 sm:p-6">
+        <div className="admin-panel mb-6 rounded-xl border border-primary/30 p-3 sm:mb-8 sm:p-6">
           <h2 className="font-display font-black uppercase tracking-wider text-sm mb-5">{editing ? "Edit Promo Code" : "New Promo Code"}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -153,7 +154,7 @@ export default function PromosPage() {
           <p className="font-display font-bold uppercase tracking-wide text-muted-foreground">No promo codes yet</p>
         </div>
       ) : (
-         <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="admin-panel overflow-hidden rounded-xl">
            <div className="grid gap-2.5 p-2.5 sm:hidden">
              {promos.map((p) => (
                <div key={p._id} className="rounded-xl border border-border/80 bg-background/45 p-3">

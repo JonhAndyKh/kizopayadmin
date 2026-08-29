@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/utils/game-helpers";
 import { format } from "date-fns";
-import { Activity, CheckCircle, Clock, XCircle, Zap, ShieldAlert, Wallet, TrendingUp, AlertTriangle, DollarSign, Eye, ReceiptText, Search, RotateCcw, Filter } from "lucide-react";
+import { Activity, ArrowUpRight, CheckCircle, Clock, XCircle, Zap, ShieldAlert, Wallet, TrendingUp, AlertTriangle, DollarSign, Eye, ReceiptText, Search, RotateCcw, Filter, RefreshCw } from "lucide-react";
 
 const TOKEN_KEY = "kizopay_token";
 
@@ -73,7 +73,7 @@ function useCatalogGames() {
 }
 
 export default function AdminDashboard() {
-  const { data: summary, isLoading, error } = useAdminOrderSummary();
+  const { data: summary, isLoading, error, refetch } = useAdminOrderSummary();
   const { data: balance, isLoading: isLoadingBalance } = useResellerBalance();
   const { data: catalogGames = [] } = useCatalogGames();
   const [selectedOrder, setSelectedOrder] = useState<OrderSummary["recentOrders"][number] | null>(null);
@@ -98,10 +98,16 @@ export default function AdminDashboard() {
   if (error) {
     return (
       <AdminLayout>
-        <div className="py-24 text-center max-w-md mx-auto">
-          <ShieldAlert className="w-16 h-16 text-destructive mx-auto mb-6" />
-          <h2 className="text-2xl font-display font-black uppercase tracking-tight text-destructive mb-2">Telemetry Offline</h2>
-          <p className="text-muted-foreground font-medium">Unable to connect to the stats server.</p>
+        <div className="admin-panel admin-reveal mx-auto max-w-lg rounded-xl px-6 py-16 text-center">
+          <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-destructive/20 bg-destructive/10">
+            <ShieldAlert className="h-6 w-6 text-destructive" />
+          </div>
+          <p className="eyebrow mb-2 text-destructive">Connection issue</p>
+          <h2 className="mb-2 font-display text-2xl font-bold tracking-tight">Operations data unavailable</h2>
+          <p className="mb-6 text-sm font-medium text-muted-foreground">We could not reach the order service. Your existing settings are safe.</p>
+          <button type="button" onClick={() => refetch()} className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90">
+            <RefreshCw className="h-4 w-4" /> Try again
+          </button>
         </div>
       </AdminLayout>
     );
@@ -109,38 +115,35 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <div className="mb-7 sm:mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="admin-reveal mb-7 flex flex-col gap-5 sm:mb-9 md:flex-row md:items-end md:justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-accent" />
-            </span>
-            <span className="font-display font-bold uppercase tracking-widest text-xs text-accent">Live Telemetry</span>
+          <div className="mb-2 flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            <span className="eyebrow text-emerald-700">Service status · healthy</span>
           </div>
-          <h1 className="text-2xl sm:text-4xl md:text-5xl font-display font-black uppercase tracking-tight text-foreground">Command Center</h1>
+          <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Operations overview</h1>
+          <p className="mt-2 max-w-xl text-sm text-muted-foreground">A clear read on balance, order flow, and fulfillment across your storefront.</p>
         </div>
 
-        {/* Bay2Game Balance */}
-        <div className={`w-full min-w-0 rounded-2xl border p-3 sm:p-4 flex items-center gap-3 sm:gap-4 md:min-w-[280px] backdrop-blur-sm ${isLowBalance ? "border-amber-400/35 bg-amber-400/8" : "border-accent/30 bg-accent/6"}`}>
-          <div className={`p-2.5 rounded-xl border ${isLowBalance ? "border-amber-400/35 bg-amber-400/8 text-amber-300" : "border-accent/30 bg-accent/8 text-accent"}`}>
+        <div className={`admin-panel flex w-full min-w-0 items-center gap-3 rounded-xl p-3 sm:gap-4 sm:p-4 md:min-w-[320px] ${isLowBalance ? "border-amber-500/40 bg-amber-50" : "border-accent/30"}`}>
+          <div className={`flex h-10 w-10 items-center justify-center rounded-lg border ${isLowBalance ? "border-amber-500/30 bg-amber-100 text-amber-700" : "border-accent/30 bg-accent/10 text-accent"}`}>
             {isLowBalance ? <AlertTriangle className="w-5 h-5" /> : <Wallet className="w-5 h-5" />}
           </div>
           <div className="flex-1">
-            <p className="font-display font-bold uppercase tracking-widest text-[10px] text-muted-foreground">Bay2Game Balance</p>
+            <p className="eyebrow text-muted-foreground">Bay2Game balance</p>
             {isLoadingBalance ? <Skeleton className="h-7 w-24 mt-1" /> : Number.isFinite(balanceAmount) ? (
               <>
-                <p className={`text-2xl font-display font-black tracking-tight ${isLowBalance ? "text-amber-300" : "text-accent"}`}>${balanceAmount.toFixed(2)}</p>
-                {isLowBalance && <p className="text-[10px] font-bold uppercase tracking-wider text-amber-300">Low — top up soon</p>}
+                <p className={`font-display text-2xl font-bold tracking-tight ${isLowBalance ? "text-amber-700" : "text-accent"}`}>${balanceAmount.toFixed(2)}</p>
+                {isLowBalance && <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Low balance · top up soon</p>}
               </>
             ) : <p className="text-sm text-muted-foreground">Unavailable</p>}
           </div>
           {balance && Number.isFinite(spentAmount) && (
             <div className="text-right border-l border-border/50 pl-4">
-              <div className="flex items-center gap-1 justify-end text-[10px] font-display font-bold uppercase tracking-widest text-muted-foreground mb-1">
+              <div className="mb-1 flex items-center justify-end gap-1 text-[10px] font-display font-bold uppercase tracking-widest text-muted-foreground">
                 <TrendingUp className="w-3 h-3" /> Spent
               </div>
-              <p className="font-display font-black text-lg text-foreground">${spentAmount.toFixed(2)}</p>
+              <p className="font-display text-lg font-bold text-foreground">${spentAmount.toFixed(2)}</p>
               <p className="text-[10px] text-muted-foreground font-medium">{balance.totalOrders} orders</p>
             </div>
           )}
@@ -149,27 +152,35 @@ export default function AdminDashboard() {
 
       {isLoading || !summary ? (
         <>
-          <div className="grid grid-cols-2 gap-3 mb-6 sm:gap-4 sm:mb-10 lg:grid-cols-5">
-            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:mb-10 sm:gap-4 lg:grid-cols-5">
+            {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}
           </div>
           <Skeleton className="h-[500px] w-full rounded-xl" />
         </>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 mb-6 sm:gap-4 sm:mb-10 lg:grid-cols-5">
-            <StatCard title="Total Volume" value={summary.total} icon={<Zap className="w-6 h-6 text-primary fill-primary/20" />} color="border-primary" />
-            <StatCard title="Pending" value={summary.pending} icon={<Clock className="w-6 h-6 text-amber-500" />} color="border-amber-500" />
-            <StatCard title="Victories" value={summary.completed} icon={<CheckCircle className="w-6 h-6 text-emerald-500" />} color="border-emerald-500" />
-            <StatCard title="Defeats" value={summary.failed} icon={<XCircle className="w-6 h-6 text-destructive" />} color="border-destructive" />
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:mb-10 sm:gap-4 lg:grid-cols-5">
+            <StatCard title="Total orders" value={summary.total} icon={<Zap className="h-5 w-5 text-primary" />} color="border-primary/40" />
+            <StatCard title="Pending" value={summary.pending} icon={<Clock className="h-5 w-5 text-amber-700" />} color="border-amber-500/35" />
+            <StatCard title="Completed" value={summary.completed} icon={<CheckCircle className="h-5 w-5 text-emerald-700" />} color="border-emerald-500/35" />
+            <StatCard title="Failed" value={summary.failed} icon={<XCircle className="h-5 w-5 text-destructive" />} color="border-destructive/35" />
             <div className="col-span-2 lg:col-span-1">
-              <StatCard title="Net Profit" value={`$${summary.profitUsd.toFixed(2)}`} icon={<DollarSign className="w-6 h-6 text-accent" />} color="border-accent" />
+              <StatCard title="Net profit" value={`$${summary.profitUsd.toFixed(2)}`} icon={<DollarSign className="h-5 w-5 text-accent" />} color="border-accent/40" />
             </div>
           </div>
 
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
-            <div className="bg-muted/60 border-b border-border px-4 sm:px-6 py-4 flex items-center gap-3">
-              <Activity className="w-5 h-5 text-accent" />
-              <h2 className="font-display font-black uppercase tracking-widest text-sm text-foreground">Recent Operations</h2>
+          <div className="admin-panel admin-reveal admin-reveal-delay-2 overflow-hidden rounded-xl">
+            <div className="flex items-center justify-between border-b border-border bg-muted/45 px-4 py-4 sm:px-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent"><Activity className="h-4 w-4" /></div>
+                <div>
+                  <h2 className="font-display text-sm font-bold tracking-tight text-foreground">Recent operations</h2>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">Latest order activity from your reseller account</p>
+                </div>
+              </div>
+              <div className="hidden items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground sm:flex">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Updated live
+              </div>
             </div>
             <div className="border-b border-border/70 bg-background/35 p-3 sm:p-5">
               <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px_auto]">
@@ -201,14 +212,14 @@ export default function AdminDashboard() {
                     <option value="expired">Expired</option>
                   </select>
                 </div>
-                <button
+                   <button
                   type="button"
                   onClick={() => { setOperationSearch(""); setOperationStatus("all"); }}
                   disabled={!operationSearch && operationStatus === "all"}
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-45"
                   data-testid="button-reset-operation-filters"
                 >
-                  <RotateCcw className="h-4 w-4" /> Reset
+                   <RotateCcw className="h-4 w-4" /> Reset
                 </button>
               </div>
               {(operationSearch || operationStatus !== "all") && (
@@ -218,7 +229,7 @@ export default function AdminDashboard() {
               )}
             </div>
             {filteredOrders.length === 0 ? (
-              <div className="p-12 text-center text-muted-foreground font-medium font-display uppercase tracking-widest">
+              <div className="p-12 text-center font-medium text-muted-foreground">
                 {summary.recentOrders.length === 0 ? "No operations recorded" : "No matching operations"}
               </div>
             ) : (
@@ -227,7 +238,7 @@ export default function AdminDashboard() {
                   const imageUrl = gameImages.get(order.gameName);
                   const isSuccess = order.orderStatus === "completed" || order.paymentStatus === "paid" || order.paymentStatus === "approved";
                   return (
-                    <article key={order.id} className="overflow-hidden rounded-xl border border-border/80 bg-background/45 shadow-sm transition-colors hover:border-accent/35">
+                    <article key={order.id} className="overflow-hidden rounded-lg border border-border/80 bg-background/45 shadow-sm transition-colors hover:border-accent/40">
                       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border/70 px-3 py-2 sm:px-5 sm:py-3">
                         <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground sm:gap-2 sm:text-xs">
                           <span className="min-w-0 max-w-[55%] truncate font-mono font-bold text-foreground" title={`#${order.id}`}>#{order.id}</span>
@@ -256,13 +267,13 @@ export default function AdminDashboard() {
                         <OperationField label="Amount" value={formatCurrency(order.amountUsd, order.currency as any)} emphasis />
                       </div>
                       <div className="flex justify-end border-t border-border/60 px-3 py-2 sm:px-5 sm:py-3">
-                        <button
+                         <button
                           type="button"
                           onClick={() => setSelectedOrder(order)}
                           className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary/20 sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2 sm:text-sm"
                           data-testid={`button-view-order-${order.id}`}
                         >
-                          <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> View
+                           <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> View details <ArrowUpRight className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </article>
@@ -318,12 +329,12 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 
 function StatCard({ title, value, icon, color }: { title: string; value: number | string; icon: React.ReactNode; color: string }) {
   return (
-    <div className={`bg-card border ${color} rounded-xl p-4 sm:p-6 flex flex-col justify-between min-h-[138px] sm:min-h-[160px] relative overflow-hidden group hover:bg-muted/20 transition-colors`}>
-      <div className="flex items-start justify-between gap-2 mb-4 sm:mb-6">
-        <p className="text-xs font-display font-bold tracking-widest uppercase text-muted-foreground">{title}</p>
-        <div className="shrink-0 p-2 bg-background border-2 border-border rounded-lg">{icon}</div>
+    <div className={`admin-panel group relative flex min-h-[132px] flex-col justify-between overflow-hidden rounded-xl border-l-2 ${color} p-4 transition-colors hover:bg-muted/30 sm:min-h-[148px] sm:p-5`}>
+      <div className="mb-4 flex items-start justify-between gap-2 sm:mb-6">
+        <p className="eyebrow text-muted-foreground">{title}</p>
+        <div className="shrink-0 rounded-lg border border-border bg-background p-2">{icon}</div>
       </div>
-      <p className={`${typeof value === "string" ? "text-2xl sm:text-4xl" : "text-4xl sm:text-5xl"} font-display font-black tracking-tighter text-foreground`}>
+      <p className={`${typeof value === "string" ? "text-2xl sm:text-3xl" : "text-3xl sm:text-4xl"} font-display font-bold tracking-tight text-foreground`}>
         {typeof value === "number" ? value.toLocaleString() : value}
       </p>
     </div>
@@ -331,10 +342,10 @@ function StatCard({ title, value, icon, color }: { title: string; value: number 
 }
 
 function StatusBadge({ status }: { status: string }) {
-  let cls = "uppercase text-[8px] font-display font-bold tracking-widest px-2 py-0.5 rounded-lg border-2 sm:text-[9px] sm:py-1 ";
-  if (status === "success" || status === "paid" || status === "completed") cls += "bg-emerald-500/10 text-emerald-300 border-emerald-500/20";
+  let cls = "uppercase text-[8px] font-display font-bold tracking-widest px-2 py-0.5 rounded-md border sm:text-[9px] sm:py-1 ";
+  if (status === "success" || status === "paid" || status === "completed") cls += "bg-emerald-500/10 text-emerald-700 border-emerald-500/20";
   else if (status === "failed" || status === "expired") cls += "bg-destructive/10 text-destructive border-destructive/20";
-  else if (status === "pending") cls += "bg-amber-500/10 text-amber-300 border-amber-500/20";
+  else if (status === "pending") cls += "bg-amber-500/10 text-amber-700 border-amber-500/20";
   else cls += "bg-primary/10 text-primary border-primary/20";
   return <span className={cls}>{status}</span>;
 }
