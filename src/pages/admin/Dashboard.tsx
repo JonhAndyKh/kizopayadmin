@@ -1,6 +1,6 @@
 import { apiUrl } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -8,8 +8,15 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/utils/game-helpers";
-import { format } from "date-fns";
-import { Activity, ArrowUpRight, CheckCircle, Clock, XCircle, Zap, ShieldAlert, Wallet, TrendingUp, AlertTriangle, DollarSign, Eye, ReceiptText, Search, RotateCcw, Filter, RefreshCw } from "lucide-react";
+import { format, isSameDay, subDays } from "date-fns";
+import {
+  Activity, ArrowUpRight, CheckCircle2, Clock3, DollarSign, Eye, Filter,
+  Grid2X2, LineChart as LineChartIcon, LoaderCircle, RefreshCw, RotateCcw,
+  Search, ShieldAlert, Wallet, XCircle, Zap,
+} from "lucide-react";
+import {
+  CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
+} from "recharts";
 
 const TOKEN_KEY = "kizopay_token";
 
@@ -19,15 +26,36 @@ function authedFetch(url: string) {
 }
 
 interface ResellerBalance {
-  username: string; balance: number; status: string; role: string; totalOrders: number; totalSpent: number;
+  username: string;
+  balance: number;
+  status: string;
+  role: string;
+  totalOrders: number;
+  totalSpent: number;
+}
+
+interface Order {
+  id: string;
+  gameName: string;
+  productName: string;
+  playerId: string;
+  serverId?: string | null;
+  amountUsd: string;
+  currency: string;
+  paymentStatus: string;
+  orderStatus: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 interface OrderSummary {
-  total: number; pending: number; paid: number; completed: number; failed: number; profitUsd: number;
-  recentOrders: Array<{
-    id: string; gameName: string; productName: string; playerId: string;
-    serverId?: string | null; amountUsd: string; currency: string; paymentStatus: string; orderStatus: string; createdAt: string; updatedAt?: string;
-  }>;
+  total: number;
+  pending: number;
+  paid: number;
+  completed: number;
+  failed: number;
+  profitUsd: number;
+  recentOrders: Order[];
 }
 
 interface CatalogGame {
@@ -76,36 +104,41 @@ export default function AdminDashboard() {
   const { data: summary, isLoading, error, refetch } = useAdminOrderSummary();
   const { data: balance, isLoading: isLoadingBalance } = useResellerBalance();
   const { data: catalogGames = [] } = useCatalogGames();
-  const [selectedOrder, setSelectedOrder] = useState<OrderSummary["recentOrders"][number] | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [operationSearch, setOperationSearch] = useState("");
   const [operationStatus, setOperationStatus] = useState("all");
   const balanceAmount = balance ? Number(balance.balance) : Number.NaN;
   const spentAmount = balance ? Number(balance.totalSpent) : Number.NaN;
-  const isLowBalance = Number.isFinite(balanceAmount) && balanceAmount < 5;
+  const orders = summary?.recentOrders ?? [];
   const gameImages = new Map(catalogGames.map((game) => [game.name, game.imageUrl]));
+  const today = new Date();
+  const todayOrders = orders.filter((order) => isSameDay(new Date(order.createdAt), today));
+  const todaySpent = todayOrders.reduce((total, order) => total + Number(order.amountUsd || 0), 0);
+  const isLowBalance = Number.isFinite(balanceAmount) && balanceAmount < 5;
   const normalizedSearch = operationSearch.trim().toLowerCase();
-  const filteredOrders = (summary?.recentOrders ?? []).filter((order) => {
+  const filteredOrders = orders.filter((order) => {
     const matchesSearch = !normalizedSearch || [
       order.id, order.gameName, order.productName, order.playerId, order.serverId ?? "",
     ].join(" ").toLowerCase().includes(normalizedSearch);
     const matchesStatus = operationStatus === "all"
       || order.orderStatus === operationStatus
       || order.paymentStatus === operationStatus
-      || (operationStatus === "success" && (order.orderStatus === "completed" || order.paymentStatus === "paid" || order.paymentStatus === "approved"));
+      || (operationStatus === "success" && isSuccessful(order));
     return matchesSearch && matchesStatus;
   });
+  const chartData = useMemo(() => buildChartData(orders), [orders]);
 
   if (error) {
     return (
       <AdminLayout>
-        <div className="admin-panel admin-reveal mx-auto max-w-lg rounded-xl px-6 py-16 text-center">
-          <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-destructive/20 bg-destructive/10">
+        <div className="admin-panel admin-reveal mx-auto max-w-lg rounded-3xl px-6 py-16 text-center">
+          <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-destructive/20 bg-destructive/10">
             <ShieldAlert className="h-6 w-6 text-destructive" />
           </div>
           <p className="eyebrow mb-2 text-destructive">Connection issue</p>
-          <h2 className="mb-2 font-display text-2xl font-bold tracking-tight">Operations data unavailable</h2>
+          <h2 className="mb-2 font-display text-2xl font-bold tracking-tight">Dashboard data unavailable</h2>
           <p className="mb-6 text-sm font-medium text-muted-foreground">We could not reach the order service. Your existing settings are safe.</p>
-          <button type="button" onClick={() => refetch()} className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90">
+          <button type="button" onClick={() => refetch()} className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90">
             <RefreshCw className="h-4 w-4" /> Try again
           </button>
         </div>
@@ -115,95 +148,99 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <div className="admin-reveal mb-7 flex flex-col gap-5 sm:mb-9 md:flex-row md:items-end md:justify-between">
+      <div className="admin-reveal mb-5 flex items-end justify-between gap-4 sm:mb-7">
         <div>
-          <div className="mb-2 flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span className="eyebrow text-emerald-700">Service status · healthy</span>
+          <div className="mb-2 flex items-center gap-2 text-primary">
+            <Grid2X2 className="h-5 w-5" />
+            <span className="font-display text-sm font-semibold">Your overview</span>
           </div>
-          <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Operations overview</h1>
-          <p className="mt-2 max-w-xl text-sm text-muted-foreground">A clear read on balance, order flow, and fulfillment across your storefront.</p>
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Account snapshot</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Here&apos;s a snapshot of your reseller account.</p>
         </div>
-
-        <div className={`admin-panel flex w-full min-w-0 items-center gap-3 rounded-xl p-3 sm:gap-4 sm:p-4 md:min-w-[320px] ${isLowBalance ? "border-amber-500/40 bg-amber-50" : "border-accent/30"}`}>
-          <div className={`flex h-10 w-10 items-center justify-center rounded-lg border ${isLowBalance ? "border-amber-500/30 bg-amber-100 text-amber-700" : "border-accent/30 bg-accent/10 text-accent"}`}>
-            {isLowBalance ? <AlertTriangle className="w-5 h-5" /> : <Wallet className="w-5 h-5" />}
-          </div>
-          <div className="flex-1">
-            <p className="eyebrow text-muted-foreground">Bay2Game balance</p>
-            {isLoadingBalance ? <Skeleton className="h-7 w-24 mt-1" /> : Number.isFinite(balanceAmount) ? (
-              <>
-                <p className={`font-display text-2xl font-bold tracking-tight ${isLowBalance ? "text-amber-700" : "text-accent"}`}>${balanceAmount.toFixed(2)}</p>
-                {isLowBalance && <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Low balance · top up soon</p>}
-              </>
-            ) : <p className="text-sm text-muted-foreground">Unavailable</p>}
-          </div>
-          {balance && Number.isFinite(spentAmount) && (
-            <div className="text-right border-l border-border/50 pl-4">
-              <div className="mb-1 flex items-center justify-end gap-1 text-[10px] font-display font-bold uppercase tracking-widest text-muted-foreground">
-                <TrendingUp className="w-3 h-3" /> Spent
-              </div>
-              <p className="font-display text-lg font-bold text-foreground">${spentAmount.toFixed(2)}</p>
-              <p className="text-[10px] text-muted-foreground font-medium">{balance.totalOrders} orders</p>
-            </div>
-          )}
+        <div className="hidden items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-700 sm:flex">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" /> Live data
         </div>
       </div>
 
       {isLoading || !summary ? (
-        <>
-          <div className="mb-6 grid grid-cols-2 gap-3 sm:mb-10 sm:gap-4 lg:grid-cols-5">
-            {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}
-          </div>
-          <Skeleton className="h-[500px] w-full rounded-xl" />
-        </>
+        <DashboardSkeleton />
       ) : (
         <>
-          <div className="mb-6 grid grid-cols-2 gap-3 sm:mb-10 sm:gap-4 lg:grid-cols-5">
-            <StatCard title="Total orders" value={summary.total} icon={<Zap className="h-5 w-5 text-primary" />} color="border-primary/40" />
-            <StatCard title="Pending" value={summary.pending} icon={<Clock className="h-5 w-5 text-amber-700" />} color="border-amber-500/35" />
-            <StatCard title="Completed" value={summary.completed} icon={<CheckCircle className="h-5 w-5 text-emerald-700" />} color="border-emerald-500/35" />
-            <StatCard title="Failed" value={summary.failed} icon={<XCircle className="h-5 w-5 text-destructive" />} color="border-destructive/35" />
-            <div className="col-span-2 lg:col-span-1">
-              <StatCard title="Net profit" value={`$${summary.profitUsd.toFixed(2)}`} icon={<DollarSign className="h-5 w-5 text-accent" />} color="border-accent/40" />
-            </div>
-          </div>
+          <section className="mb-5 grid grid-cols-2 gap-3 sm:mb-6 sm:gap-4 lg:grid-cols-4">
+            <MetricCard
+              title="Balance"
+              value={isLoadingBalance ? "—" : Number.isFinite(balanceAmount) ? `$${balanceAmount.toFixed(2)}` : "Unavailable"}
+              caption={isLowBalance ? "Low balance · Request top-up" : "Request top-up"}
+              icon={<Wallet />}
+              tone="teal"
+            />
+            <MetricCard title="Total orders" value={summary.total} caption="All time" icon={<Zap />} tone="blue" />
+            <MetricCard
+              title="Total spent"
+              value={Number.isFinite(spentAmount) ? `$${spentAmount.toFixed(2)}` : "Unavailable"}
+              caption={Number.isFinite(spentAmount) && summary.total > 0 ? `Avg $${(spentAmount / summary.total).toFixed(2)} / order` : "All time"}
+              icon={<DollarSign />}
+              tone="purple"
+            />
+            <MetricCard title="Failed orders" value={summary.failed} caption="Needs attention" icon={<XCircle />} tone="red" />
+            <MetricCard title="Today&apos;s orders" value={todayOrders.length} caption="Since midnight" icon={<Zap />} tone="blue" />
+            <MetricCard title="Today&apos;s spent" value={`$${todaySpent.toFixed(2)}`} caption="Since midnight" icon={<DollarSign />} tone="purple" />
+            <MetricCard title="Success" value={summary.completed} caption="Completed orders" icon={<CheckCircle2 />} tone="teal" />
+            <MetricCard title="Pending" value={summary.pending} caption="In progress" icon={<Clock3 />} tone="amber" />
+          </section>
 
-          <div className="admin-panel admin-reveal admin-reveal-delay-2 overflow-hidden rounded-xl">
-            <div className="flex items-center justify-between border-b border-border bg-muted/45 px-4 py-4 sm:px-6">
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent"><Activity className="h-4 w-4" /></div>
-                <div>
-                  <h2 className="font-display text-sm font-bold tracking-tight text-foreground">Recent operations</h2>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">Latest order activity from your reseller account</p>
-                </div>
+          <section className="admin-panel admin-reveal mb-5 overflow-hidden rounded-3xl sm:mb-6">
+            <div className="flex items-center gap-3 px-4 pb-2 pt-4 sm:px-6 sm:pt-5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/10 text-primary">
+                <LineChartIcon className="h-4 w-4" />
               </div>
-              <div className="hidden items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground sm:flex">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Updated live
-              </div>
+              <h2 className="font-display text-base font-semibold">Daily orders &amp; spend — {format(today, "MMMM yyyy")}</h2>
             </div>
-            <div className="border-b border-border/70 bg-background/35 p-3 sm:p-5">
+            <div className="h-[260px] w-full px-1 pb-4 pt-2 sm:h-[330px] sm:px-5 sm:pb-5">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                  <CartesianGrid stroke="hsl(220 18% 90%)" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fill: "hsl(220 10% 49%)", fontSize: 10 }} tickLine={false} axisLine={false} interval={4} />
+                  <YAxis yAxisId="orders" tick={{ fill: "hsl(220 10% 49%)", fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
+                  <YAxis yAxisId="spend" orientation="right" tick={{ fill: "hsl(220 10% 49%)", fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} width={38} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 14, border: "1px solid hsl(220 18% 90%)", boxShadow: "0 8px 20px hsl(222 28% 15% / .08)", fontSize: 12 }}
+                    formatter={(value: number, name: string) => [name === "Spent ($)" ? `$${value.toFixed(2)}` : value, name]}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: 11, paddingTop: 4 }} />
+                  <Line yAxisId="spend" type="monotone" dataKey="spend" name="Spent ($)" stroke="#20b486" strokeWidth={2.5} dot={{ r: 2.5, fill: "#20b486", strokeWidth: 0 }} activeDot={{ r: 5 }} />
+                  <Line yAxisId="orders" type="monotone" dataKey="orders" name="Orders" stroke="#3d7bea" strokeWidth={2.5} dot={{ r: 2.5, fill: "#3d7bea", strokeWidth: 0 }} activeDot={{ r: 5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
+
+          <section className="admin-panel admin-reveal overflow-hidden rounded-3xl">
+            <div className="flex items-center justify-between gap-3 border-b border-border/70 px-4 py-4 sm:px-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                  <Activity className="h-4 w-4" />
+                </div>
+                <h2 className="font-display text-base font-semibold">Latest orders</h2>
+              </div>
+              <span className="hidden text-xs font-semibold text-accent sm:block">Updated live</span>
+            </div>
+            <div className="border-b border-border/70 bg-muted/25 p-3 sm:p-4">
               <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px_auto]">
                 <div className="relative">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     value={operationSearch}
                     onChange={(event) => setOperationSearch(event.target.value)}
-                    placeholder="Search transaction, game, player ID…"
-                    className="h-11 rounded-xl border-border bg-card pl-9 text-sm"
-                    aria-label="Search recent operations"
+                    placeholder="Search orders, games, player IDs…"
+                    className="h-10 rounded-xl border-border bg-card pl-9 text-sm"
+                    aria-label="Search latest orders"
                     data-testid="input-search-operations"
                   />
                 </div>
                 <div className="relative">
                   <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <select
-                    value={operationStatus}
-                    onChange={(event) => setOperationStatus(event.target.value)}
-                    className="h-11 w-full appearance-none rounded-xl border border-border bg-card pl-9 pr-8 text-sm font-medium text-foreground outline-none focus:border-primary"
-                    aria-label="Filter operations by status"
-                    data-testid="select-operation-status"
-                  >
+                  <select value={operationStatus} onChange={(event) => setOperationStatus(event.target.value)} className="h-10 w-full appearance-none rounded-xl border border-border bg-card pl-9 pr-8 text-sm font-medium text-foreground outline-none focus:border-primary" aria-label="Filter orders by status" data-testid="select-operation-status">
                     <option value="all">All statuses</option>
                     <option value="success">Success</option>
                     <option value="processing">Processing</option>
@@ -212,88 +249,33 @@ export default function AdminDashboard() {
                     <option value="expired">Expired</option>
                   </select>
                 </div>
-                   <button
-                  type="button"
-                  onClick={() => { setOperationSearch(""); setOperationStatus("all"); }}
-                  disabled={!operationSearch && operationStatus === "all"}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-45"
-                  data-testid="button-reset-operation-filters"
-                >
-                   <RotateCcw className="h-4 w-4" /> Reset
+                <button type="button" onClick={() => { setOperationSearch(""); setOperationStatus("all"); }} disabled={!operationSearch && operationStatus === "all"} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-45" data-testid="button-reset-operation-filters">
+                  <RotateCcw className="h-4 w-4" /> Reset
                 </button>
               </div>
-              {(operationSearch || operationStatus !== "all") && (
-                <p className="mt-2 text-xs font-medium text-muted-foreground">
-                  Showing {filteredOrders.length} of {summary.recentOrders.length} recent operations
-                </p>
-              )}
+              {(operationSearch || operationStatus !== "all") && <p className="mt-2 text-xs font-medium text-muted-foreground">Showing {filteredOrders.length} of {orders.length} latest orders</p>}
             </div>
             {filteredOrders.length === 0 ? (
-              <div className="p-12 text-center font-medium text-muted-foreground">
-                {summary.recentOrders.length === 0 ? "No operations recorded" : "No matching operations"}
-              </div>
+              <div className="p-12 text-center font-medium text-muted-foreground">{orders.length === 0 ? "No orders recorded yet" : "No matching orders"}</div>
             ) : (
-              <div className="grid gap-3 p-2.5 sm:gap-4 sm:p-5">
-                {filteredOrders.map((order) => {
-                  const imageUrl = gameImages.get(order.gameName);
-                  const isSuccess = order.orderStatus === "completed" || order.paymentStatus === "paid" || order.paymentStatus === "approved";
-                  return (
-                    <article key={order.id} className="overflow-hidden rounded-lg border border-border/80 bg-background/45 shadow-sm transition-colors hover:border-accent/40">
-                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border/70 px-3 py-2 sm:px-5 sm:py-3">
-                        <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground sm:gap-2 sm:text-xs">
-                          <span className="min-w-0 max-w-[55%] truncate font-mono font-bold text-foreground" title={`#${order.id}`}>#{order.id}</span>
-                          <span className="shrink-0 text-border">·</span>
-                          <span className="shrink-0 whitespace-nowrap">{format(new Date(order.createdAt), "MMM d · h:mm a")}</span>
-                        </div>
-                        <div className="shrink-0">
-                          <StatusBadge status={isSuccess ? "success" : order.orderStatus} />
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2.5 border-b border-border/60 px-3 py-2.5 sm:gap-3 sm:px-5 sm:py-4">
-                        {imageUrl ? (
-                          <img src={imageUrl} alt="" className="h-10 w-10 shrink-0 rounded-lg border border-border object-cover sm:h-14 sm:w-14 sm:rounded-xl" />
-                        ) : (
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary sm:h-14 sm:w-14 sm:rounded-xl">
-                            <Zap className="h-5 w-5 sm:h-6 sm:w-6" />
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <h3 className="truncate font-display text-sm font-black text-foreground sm:text-lg">{order.gameName}</h3>
-                          <p className="truncate text-xs font-medium text-muted-foreground sm:text-sm">{order.productName}</p>
-                        </div>
-                      </div>
-                      <div className="grid gap-0 sm:grid-cols-2">
-                        <OperationField label="Player ID" value={`${order.playerId}${order.serverId ? ` (${order.serverId})` : ""}`} />
-                        <OperationField label="Amount" value={formatCurrency(order.amountUsd, order.currency as any)} emphasis />
-                      </div>
-                      <div className="flex justify-end border-t border-border/60 px-3 py-2 sm:px-5 sm:py-3">
-                         <button
-                          type="button"
-                          onClick={() => setSelectedOrder(order)}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary/20 sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2 sm:text-sm"
-                          data-testid={`button-view-order-${order.id}`}
-                        >
-                           <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> View details <ArrowUpRight className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </article>
-                  );
-                })}
+              <div className="divide-y divide-border/70">
+                {filteredOrders.map((order) => (
+                  <OrderRow key={order.id} order={order} imageUrl={gameImages.get(order.gameName)} onView={() => setSelectedOrder(order)} />
+                ))}
               </div>
             )}
-          </div>
+          </section>
         </>
       )}
+
       <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
-        <DialogContent className="max-w-md rounded-2xl border-border bg-card">
+        <DialogContent className="max-w-md rounded-3xl border-border bg-card">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 font-display font-black">
-              <ReceiptText className="h-5 w-5 text-primary" /> Order Details
-            </DialogTitle>
+            <DialogTitle className="flex items-center gap-2 font-display font-semibold"><ReceiptIcon /> Order details</DialogTitle>
             <DialogDescription className="font-mono text-xs">{selectedOrder?.id}</DialogDescription>
           </DialogHeader>
           {selectedOrder && (
-            <div className="divide-y divide-border/70 rounded-xl border border-border/70 bg-background/40">
+            <div className="divide-y divide-border/70 rounded-2xl border border-border/70 bg-background/40">
               <DetailRow label="Game" value={selectedOrder.gameName} />
               <DetailRow label="Product" value={selectedOrder.productName} />
               <DetailRow label="Player ID" value={`${selectedOrder.playerId}${selectedOrder.serverId ? ` (${selectedOrder.serverId})` : ""}`} />
@@ -309,43 +291,104 @@ export default function AdminDashboard() {
   );
 }
 
-function OperationField({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) {
-  return (
-    <div className="flex items-center justify-between gap-3 border-t border-border/60 px-3 py-2 first:border-t-0 sm:px-5 sm:py-3 sm:first:border-t-0">
-      <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground sm:text-[10px]">{label}</span>
-      <span className={`max-w-[68%] truncate text-right font-mono text-xs sm:text-sm ${emphasis ? "text-sm font-black text-foreground sm:text-lg" : "font-bold text-foreground"}`} title={value}>{value}</span>
-    </div>
-  );
+function buildChartData(orders: Order[]) {
+  return Array.from({ length: 30 }, (_, index) => {
+    const date = subDays(new Date(), 29 - index);
+    const dayOrders = orders.filter((order) => isSameDay(new Date(order.createdAt), date));
+    return {
+      label: format(date, "d"),
+      orders: dayOrders.length,
+      spend: dayOrders.reduce((total, order) => total + Number(order.amountUsd || 0), 0),
+    };
+  });
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="max-w-[68%] truncate text-right font-mono font-bold text-foreground" title={value}>{value}</span>
-    </div>
-  );
-}
+type MetricTone = "teal" | "blue" | "purple" | "red" | "amber";
 
-function StatCard({ title, value, icon, color }: { title: string; value: number | string; icon: React.ReactNode; color: string }) {
+const metricToneClasses: Record<MetricTone, { icon: string; value: string; panel: string }> = {
+  teal: { icon: "bg-emerald-500/10 text-emerald-600", value: "text-emerald-700", panel: "hover:border-emerald-500/30" },
+  blue: { icon: "bg-blue-500/10 text-blue-600", value: "text-foreground", panel: "hover:border-blue-500/30" },
+  purple: { icon: "bg-violet-500/10 text-violet-600", value: "text-foreground", panel: "hover:border-violet-500/30" },
+  red: { icon: "bg-rose-500/10 text-rose-600", value: "text-rose-600", panel: "hover:border-rose-500/30" },
+  amber: { icon: "bg-amber-500/10 text-amber-600", value: "text-amber-700", panel: "hover:border-amber-500/30" },
+};
+
+function MetricCard({ title, value, caption, icon, tone }: { title: string; value: number | string; caption: string; icon: ReactNode; tone: MetricTone }) {
+  const classes = metricToneClasses[tone];
   return (
-    <div className={`admin-panel group relative flex min-h-[132px] flex-col justify-between overflow-hidden rounded-xl border-l-2 ${color} p-4 transition-colors hover:bg-muted/30 sm:min-h-[148px] sm:p-5`}>
-      <div className="mb-4 flex items-start justify-between gap-2 sm:mb-6">
-        <p className="eyebrow text-muted-foreground">{title}</p>
-        <div className="shrink-0 rounded-lg border border-border bg-background p-2">{icon}</div>
+    <div className={`admin-panel flex min-h-[126px] flex-col justify-between rounded-2xl p-3.5 transition-colors sm:min-h-[142px] sm:p-4 ${classes.panel}`}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-medium text-muted-foreground sm:text-sm">{title}</p>
+        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${classes.icon}`}>{icon}</div>
       </div>
-      <p className={`${typeof value === "string" ? "text-2xl sm:text-3xl" : "text-3xl sm:text-4xl"} font-display font-bold tracking-tight text-foreground`}>
-        {typeof value === "number" ? value.toLocaleString() : value}
-      </p>
+      <div>
+        <p className={`font-display text-2xl font-semibold tracking-tight sm:text-3xl ${classes.value}`}>{typeof value === "number" ? value.toLocaleString() : value}</p>
+        <p className={`mt-1 truncate text-[11px] font-medium sm:text-xs ${tone === "red" || tone === "amber" ? classes.value : "text-muted-foreground"}`}>{caption}</p>
+      </div>
     </div>
   );
+}
+
+function OrderRow({ order, imageUrl, onView }: { order: Order; imageUrl?: string; onView: () => void }) {
+  const success = isSuccessful(order);
+  return (
+    <div className="flex items-center gap-3 px-3 py-3.5 transition-colors hover:bg-muted/25 sm:px-6 sm:py-4">
+      {imageUrl ? <img src={imageUrl} alt="" className="h-11 w-11 shrink-0 rounded-xl border border-border object-cover sm:h-12 sm:w-12" /> : <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-primary sm:h-12 sm:w-12"><Zap className="h-5 w-5" /></div>}
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <p className="truncate font-display text-sm font-semibold text-foreground sm:text-base">{order.productName || order.gameName}</p>
+          <span className="hidden shrink-0 text-[10px] text-muted-foreground sm:inline">#{order.id}</span>
+        </div>
+        <p className="truncate text-xs text-muted-foreground">{order.gameName} · {order.playerId}</p>
+        <p className="mt-0.5 text-[10px] text-muted-foreground sm:hidden">{format(new Date(order.createdAt), "MMM d, h:mm a")}</p>
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-1.5">
+        <p className="font-display text-sm font-semibold text-foreground sm:text-base">{formatCurrency(order.amountUsd, order.currency as any)}</p>
+        <StatusBadge status={success ? "success" : order.orderStatus} />
+      </div>
+      <button type="button" onClick={onView} className="hidden h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:flex" aria-label={`View order ${order.id}`} data-testid={`button-view-order-${order.id}`}>
+        <Eye className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
+function isSuccessful(order: Order) {
+  return order.orderStatus === "completed" || order.paymentStatus === "paid" || order.paymentStatus === "approved";
 }
 
 function StatusBadge({ status }: { status: string }) {
-  let cls = "uppercase text-[8px] font-display font-bold tracking-widest px-2 py-0.5 rounded-md border sm:text-[9px] sm:py-1 ";
-  if (status === "success" || status === "paid" || status === "completed") cls += "bg-emerald-500/10 text-emerald-700 border-emerald-500/20";
-  else if (status === "failed" || status === "expired") cls += "bg-destructive/10 text-destructive border-destructive/20";
-  else if (status === "pending") cls += "bg-amber-500/10 text-amber-700 border-amber-500/20";
-  else cls += "bg-primary/10 text-primary border-primary/20";
-  return <span className={cls}>{status}</span>;
+  const normalized = status.toLowerCase();
+  const success = normalized === "success" || normalized === "paid" || normalized === "completed";
+  const failed = normalized === "failed" || normalized === "expired";
+  const pending = normalized === "pending" || normalized === "processing";
+  const classes = success
+    ? "bg-emerald-500/10 text-emerald-700"
+    : failed
+      ? "bg-rose-500/10 text-rose-600"
+      : pending
+        ? "bg-amber-500/10 text-amber-700"
+        : "bg-blue-500/10 text-blue-700";
+  const Icon = success ? CheckCircle2 : failed ? XCircle : pending ? Clock3 : LoaderCircle;
+  return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold capitalize ${classes}`}><Icon className="h-3 w-3" />{status}</span>;
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return <div className="flex items-center justify-between gap-4 px-4 py-3 text-sm"><span className="text-muted-foreground">{label}</span><span className="max-w-[68%] truncate text-right font-mono font-bold text-foreground" title={value}>{value}</span></div>;
+}
+
+function ReceiptIcon() {
+  return <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/10 text-primary"><DollarSign className="h-4 w-4" /></span>;
+}
+
+function DashboardSkeleton() {
+  return (
+    <>
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:mb-6 sm:grid-cols-4 sm:gap-4">
+        {Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} className="h-32 w-full rounded-2xl" />)}
+      </div>
+      <Skeleton className="mb-5 h-[330px] w-full rounded-3xl" />
+      <Skeleton className="h-[420px] w-full rounded-3xl" />
+    </>
+  );
 }

@@ -152,7 +152,7 @@ export default function SlidesPage() {
                 <p className="text-xs text-muted-foreground truncate">{slide.subtitle}</p>
               </div>
                 <div className="col-span-3 ml-auto flex items-center gap-1.5 shrink-0 sm:col-span-1 sm:gap-2">
-                <span className={`text-[9px] font-display font-bold uppercase tracking-widest px-2 py-1 rounded-lg border ${slide.isActive ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-muted text-muted-foreground border-border"}`}>
+                <span className={`text-[9px] font-display font-bold uppercase tracking-widest px-2 py-1 rounded-lg border ${slide.isActive ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20" : "bg-muted text-muted-foreground border-border"}`}>
                   {slide.isActive ? "Active" : "Hidden"}
                 </span>
                 <Button size="icon" variant="ghost" className="w-7 h-7" onClick={() => toggleMutation.mutate({ id: slide._id, isActive: !slide.isActive })}>

@@ -193,7 +193,7 @@ export default function LiveEventsPage() {
                  <p className="truncate text-xs text-accent">{event.gameCode || "No game code"}</p>
               </div>
               <div className="col-span-3 ml-auto flex shrink-0 items-center gap-1.5 sm:col-span-1 sm:gap-2">
-                <span className={`rounded-lg border px-2 py-1 font-display text-[9px] font-bold uppercase tracking-widest ${event.isActive ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-border bg-muted text-muted-foreground"}`}>
+                <span className={`rounded-lg border px-2 py-1 font-display text-[9px] font-bold uppercase tracking-widest ${event.isActive ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700" : "border-border bg-muted text-muted-foreground"}`}>
                   {event.isActive ? "Active" : "Hidden"}
                 </span>
                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => toggleMutation.mutate({ id: event._id, isActive: !event.isActive })}>

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -6,8 +6,8 @@ import { Activity, ChevronRight, Clock3, Gamepad2, Image, LayoutDashboard, LogOu
 import { BrandMark } from "@/components/BrandMark";
 
 const NAV = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/admin/games", label: "Games", icon: Gamepad2 },
+  { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
+  { href: "/admin/games", label: "Catalogue", icon: Gamepad2 },
   { href: "/admin/slides", label: "Promo Slides", icon: Image },
   { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
   { href: "/admin/live-events", label: "Live Events", icon: Radio },
@@ -20,6 +20,10 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location]);
+
   const isActive = (href: string, exact?: boolean) =>
     exact ? location === href : location.startsWith(href);
 
@@ -31,7 +35,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       </div>
 
       {/* Sidebar */}
-      <aside className="relative z-10 hidden w-[248px] shrink-0 flex-col bg-[#17283d] text-slate-200 md:flex">
+      <aside className="relative z-10 hidden w-[260px] shrink-0 flex-col bg-[#092653] text-slate-200 md:flex">
         <Link href="/" className="flex items-center gap-3 border-b border-white/10 px-6 py-5">
           <BrandMark size="md" inverse />
         </Link>
@@ -53,7 +57,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             return (
               <Link key={href} href={href} className={`group flex items-center gap-3 rounded-md border px-3 py-2.5 transition-colors ${
                     active
-                      ? "border-white/10 bg-white/10 text-white"
+                      ? "border-primary/40 bg-primary text-white shadow-lg shadow-primary/20"
                       : "border-transparent text-slate-400 hover:border-white/10 hover:bg-white/5 hover:text-slate-100"
                   }`}>
                 <Icon className={`h-4 w-4 shrink-0 ${active ? "text-amber-300" : "text-slate-500 group-hover:text-slate-300"}`} />
@@ -91,30 +95,34 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Mobile header */}
-      <div className="fixed left-0 right-0 top-0 z-50 flex h-14 items-center justify-between border-b border-white/10 bg-[#17283d]/95 px-4 shadow-lg backdrop-blur-xl md:hidden">
-        <Link href="/" className="flex items-center gap-2">
-          <BrandMark inverse />
-        </Link>
-        <div className="flex items-center gap-1">
-          <Button onClick={() => setMobileNavOpen((open) => !open)} variant="ghost" size="sm" className="text-slate-300 hover:bg-white/10 hover:text-white" aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}>
-            {mobileNavOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+      <div className="fixed left-0 right-0 top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-card/95 px-4 shadow-sm backdrop-blur-xl md:hidden">
+        <div className="flex min-w-0 items-center gap-3">
+          <Button onClick={() => setMobileNavOpen((open) => !open)} variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-foreground hover:bg-muted" aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}>
+            {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
-          <Button onClick={logout} variant="ghost" size="sm" className="text-slate-300 hover:bg-white/10 hover:text-white" aria-label="Log out">
-            <LogOut className="w-4 h-4" />
-          </Button>
+          <span className="truncate font-display text-lg font-semibold text-foreground">
+            {location === "/admin" ? "Overview" : NAV.find((item) => isActive(item.href, item.exact))?.label ?? "Admin"}
+          </span>
         </div>
+        <button type="button" onClick={() => setMobileNavOpen(true)} className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[#0c4ca8] text-sm font-bold text-white shadow-md shadow-primary/20" aria-label="Open account menu">
+          {(user?.name ?? "A").charAt(0).toUpperCase()}
+        </button>
       </div>
 
       {/* Mobile navigation drawer */}
       {mobileNavOpen && (
         <div className="fixed inset-0 z-40 bg-[#0d1b2a]/45 md:hidden" onClick={() => setMobileNavOpen(false)}>
-          <aside className="flex h-full w-[min(82vw,300px)] flex-col bg-[#17283d] pt-14 text-slate-200 shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <div className="border-b border-white/10 px-5 py-4">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                Operations online
+          <aside className="flex h-full w-[min(82vw,300px)] flex-col bg-[#092653] pt-16 text-slate-200 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div className="border-b border-white/10 px-5 py-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-white">
+                  <LayoutDashboard className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-display text-base font-semibold text-white">KizoPay</p>
+                  <p className="text-xs text-slate-300/70">Reseller Portal</p>
+                </div>
               </div>
-              <p className="mt-2 text-xs leading-5 text-slate-300/70">Reseller control room</p>
             </div>
             <nav className="flex-1 space-y-1 px-3 py-5">
               <p className="eyebrow px-3 pb-2 text-slate-500">Workspace</p>
@@ -127,7 +135,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                     onClick={() => setMobileNavOpen(false)}
                     className={`group flex items-center gap-3 rounded-md border px-3 py-3 transition-colors ${
                       active
-                        ? "border-white/10 bg-white/10 text-white"
+                         ? "border-primary/40 bg-primary text-white shadow-lg shadow-black/10"
                         : "border-transparent text-slate-400 hover:border-white/10 hover:bg-white/5 hover:text-slate-100"
                     }`}
                   >
@@ -138,7 +146,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 );
               })}
             </nav>
-            <div className="mx-3 mb-4 rounded-lg border border-white/10 bg-white/5 p-3">
+            <div className="mx-3 mb-4 rounded-2xl border border-white/10 bg-white/5 p-4">
               <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
                 <ShieldCheck className="h-3.5 w-3.5 text-amber-300" />
                 Secure session
@@ -152,6 +160,9 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                   <p className="truncate text-[10px] text-slate-400">{user?.email}</p>
                 </div>
               </div>
+              <Button onClick={logout} variant="ghost" size="sm" className="mt-4 w-full rounded-xl border border-white/10 font-display text-xs uppercase tracking-wide text-slate-300 hover:border-white/20 hover:bg-white/10 hover:text-white">
+                <LogOut className="mr-2 h-3.5 w-3.5" /> Sign out
+              </Button>
             </div>
           </aside>
         </div>

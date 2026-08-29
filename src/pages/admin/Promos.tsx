@@ -169,7 +169,7 @@ export default function PromosPage() {
                      <p className="mt-1 text-xs text-muted-foreground">{p.discountType === "percent" ? `${p.discountValue}% discount` : `$${p.discountValue.toFixed(2)} discount`}</p>
                    </div>
                    <button onClick={() => toggleMutation.mutate({ id: p._id, isActive: !p.isActive })}>
-                     <span className={`whitespace-nowrap text-[8px] font-display font-bold uppercase tracking-widest px-2 py-0.5 rounded-lg border ${p.isActive ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-muted text-muted-foreground border-border"}`}>
+                      <span className={`whitespace-nowrap text-[8px] font-display font-bold uppercase tracking-widest px-2 py-0.5 rounded-lg border ${p.isActive ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20" : "bg-muted text-muted-foreground border-border"}`}>
                        {p.isActive ? "Active" : "Off"}
                      </span>
                    </button>
@@ -220,7 +220,7 @@ export default function PromosPage() {
                     </td>
                     <td className="px-4 py-3">
                       <button onClick={() => toggleMutation.mutate({ id: p._id, isActive: !p.isActive })}>
-                        <span className={`text-[9px] font-display font-bold uppercase tracking-widest px-2 py-1 rounded-lg border cursor-pointer ${p.isActive ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-muted text-muted-foreground border-border"}`}>
+                        <span className={`text-[9px] font-display font-bold uppercase tracking-widest px-2 py-1 rounded-lg border cursor-pointer ${p.isActive ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20" : "bg-muted text-muted-foreground border-border"}`}>
                           {p.isActive ? "Active" : "Off"}
                         </span>
                       </button>

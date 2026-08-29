@@ -438,7 +438,7 @@ export default function GamesPage() {
                     </span>
                   )}
                   {game.isPinned && (
-                    <span className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-amber-400/10 text-amber-300">
+                    <span className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-amber-400/10 text-amber-700">
                       Pinned
                     </span>
                   )}
@@ -477,7 +477,7 @@ export default function GamesPage() {
                 <Button
                   size="icon"
                   variant="ghost"
-                   className={`w-7 h-7 sm:w-8 sm:h-8 ${game.isPinned ? "text-amber-300 bg-amber-400/10" : "text-muted-foreground hover:text-amber-300"}`}
+                   className={`w-7 h-7 sm:w-8 sm:h-8 ${game.isPinned ? "text-amber-700 bg-amber-400/10" : "text-muted-foreground hover:text-amber-700"}`}
                   title={game.isPinned ? "Unpin game" : "Pin game"}
                   data-testid={`btn-pin-${game.gameCode}`}
                   onClick={() => game.isCustom
