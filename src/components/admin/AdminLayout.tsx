@@ -2,12 +2,13 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Activity, ChevronRight, Clock3, Gamepad2, Image, LayoutDashboard, LogOut, Megaphone, Menu, Package, Radio, ShieldCheck, Tag, X } from "lucide-react";
+import { Activity, ChevronRight, ClipboardList, Clock3, Gamepad2, Image, LayoutDashboard, LogOut, Megaphone, Menu, Package, Radio, ShieldCheck, Tag, X } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 
 const NAV = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/admin/games", label: "Catalogue", icon: Gamepad2 },
+  { href: "/admin/orders", label: "Orders", icon: ClipboardList },
   { href: "/admin/slides", label: "Promo Slides", icon: Image },
   { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
   { href: "/admin/live-events", label: "Live Events", icon: Radio },

@@ -14,6 +14,7 @@ import {
 
 import LoginPage from '@/pages/Login';
 import AdminDashboard from '@/pages/admin/Dashboard';
+import OrdersPage from '@/pages/admin/Orders';
 import GamesPage from '@/pages/admin/Games';
 import SlidesPage from '@/pages/admin/Slides';
 import PromosPage from '@/pages/admin/Promos';
@@ -45,6 +46,9 @@ function Router() {
         </Route>
         <Route path="/admin/games">
           {() => <PrivateRoute component={GamesPage} />}
+        </Route>
+        <Route path="/admin/orders">
+          {() => <PrivateRoute component={OrdersPage} />}
         </Route>
         <Route path="/admin/slides">
           {() => <PrivateRoute component={SlidesPage} />}
