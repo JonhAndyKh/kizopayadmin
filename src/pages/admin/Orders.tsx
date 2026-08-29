@@ -2,6 +2,7 @@ import { apiUrl } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -19,6 +20,25 @@ const TOKEN_KEY = "kizopay_token";
 function authedFetch(url: string) {
   const token = localStorage.getItem(TOKEN_KEY);
   return fetch(apiUrl(url), token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+}
+
+class ApiRequestError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+    this.name = "ApiRequestError";
+  }
+}
+
+async function authedJson<T>(url: string): Promise<T> {
+  const response = await authedFetch(url);
+  const body = await response.json().catch(() => null) as { error?: string } | null;
+  if (!response.ok) {
+    throw new ApiRequestError(
+      body?.error ?? (response.status === 401 ? "Your admin session has expired." : "Unable to load order data."),
+      response.status,
+    );
+  }
+  return body as T;
 }
 
 interface Order {
@@ -73,9 +93,7 @@ function useOrderSummary() {
   return useQuery<OrderSummary>({
     queryKey: ["order-summary"],
     queryFn: async () => {
-      const response = await authedFetch("/api/orders/summary");
-      if (!response.ok) throw new Error("Failed to fetch orders");
-      return response.json();
+      return authedJson<OrderSummary>("/api/orders/summary");
     },
     refetchInterval: 10000,
   });
@@ -94,9 +112,7 @@ function useOrderList(range: OrderRange, search: string, status: string, page: n
       const rangeDates = getRangeDates(range);
       if (rangeDates.from) params.set("from", rangeDates.from);
       if (rangeDates.to) params.set("to", rangeDates.to);
-      const response = await authedFetch(`/api/orders/list?${params.toString()}`);
-      if (!response.ok) throw new Error("Failed to fetch order history");
-      return response.json();
+      return authedJson<OrderListResponse>(`/api/orders/list?${params.toString()}`);
     },
     refetchInterval: 10000,
   });
@@ -106,9 +122,7 @@ function useBalance() {
   return useQuery<ResellerBalance>({
     queryKey: ["reseller-balance"],
     queryFn: async () => {
-      const response = await authedFetch("/api/balance");
-      if (!response.ok) throw new Error("Failed to fetch balance");
-      return response.json();
+      return authedJson<ResellerBalance>("/api/balance");
     },
     refetchInterval: 30000,
   });
@@ -127,6 +141,7 @@ function useCatalogGames() {
 }
 
 export default function OrdersPage() {
+  const { logout } = useAuth();
   const { data: summary, isLoading: summaryLoading, error: summaryError, refetch: refetchSummary } = useOrderSummary();
   const { data: balance } = useBalance();
   const { data: games = [] } = useCatalogGames();
@@ -144,6 +159,7 @@ export default function OrdersPage() {
   const totalSpent = balance ? Number(balance.totalSpent) : 0;
   const successRate = summary?.total ? Math.round((summary.completed / summary.total) * 100) : 0;
   const error = summaryError || ordersError;
+  const isSessionError = error instanceof ApiRequestError && error.status === 401;
 
   const applyFilters = () => {
     setSearch(draftSearch);
@@ -166,8 +182,8 @@ export default function OrdersPage() {
         <div className="admin-panel mx-auto max-w-lg rounded-3xl px-6 py-16 text-center">
           <ShieldAlert className="mx-auto mb-4 h-8 w-8 text-destructive" />
           <h1 className="font-display text-2xl font-semibold">Orders unavailable</h1>
-          <p className="mt-2 text-sm text-muted-foreground">We could not load the reseller order history.</p>
-          <button type="button" onClick={() => { void refetchSummary(); void refetchOrders(); }} className="mt-6 inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white"><RotateCcw className="h-4 w-4" /> Try again</button>
+          <p className="mt-2 text-sm text-muted-foreground">{isSessionError ? "Your admin session is no longer valid. Please sign in again." : error instanceof Error ? error.message : "We could not load the reseller order history."}</p>
+          <button type="button" onClick={() => isSessionError ? logout() : (() => { void refetchSummary(); void refetchOrders(); })()} className="mt-6 inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white"><RotateCcw className="h-4 w-4" /> {isSessionError ? "Sign in again" : "Try again"}</button>
         </div>
       </AdminLayout>
     );
