@@ -8,10 +8,10 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/utils/game-helpers";
-import { format, isSameDay, isSameMonth } from "date-fns";
+import { format } from "date-fns";
 import {
-  CheckCircle2, Clock3, Eye, Filter, LoaderCircle, RotateCcw, Search,
-  ShieldAlert, Wallet, XCircle, Zap, DollarSign, Target,
+  CheckCircle2, ChevronLeft, ChevronRight, Clock3, Eye, Filter, LoaderCircle,
+  RotateCcw, Search, ShieldAlert, Wallet, XCircle, Zap, DollarSign, Target,
 } from "lucide-react";
 
 const TOKEN_KEY = "kizopay_token";
@@ -45,6 +45,18 @@ interface OrderSummary {
   recentOrders: Order[];
 }
 
+interface OrderListResponse {
+  orders: Order[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
 interface ResellerBalance {
   balance: number;
   totalSpent: number;
@@ -63,6 +75,27 @@ function useOrderSummary() {
     queryFn: async () => {
       const response = await authedFetch("/api/orders/summary");
       if (!response.ok) throw new Error("Failed to fetch orders");
+      return response.json();
+    },
+    refetchInterval: 10000,
+  });
+}
+
+function useOrderList(range: OrderRange, search: string, status: string, page: number) {
+  return useQuery<OrderListResponse>({
+    queryKey: ["orders", { range, search, status, page }],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: "25",
+        status,
+      });
+      if (search.trim()) params.set("search", search.trim());
+      const rangeDates = getRangeDates(range);
+      if (rangeDates.from) params.set("from", rangeDates.from);
+      if (rangeDates.to) params.set("to", rangeDates.to);
+      const response = await authedFetch(`/api/orders/list?${params.toString()}`);
+      if (!response.ok) throw new Error("Failed to fetch order history");
       return response.json();
     },
     refetchInterval: 10000,
@@ -94,7 +127,7 @@ function useCatalogGames() {
 }
 
 export default function OrdersPage() {
-  const { data: summary, isLoading, error, refetch } = useOrderSummary();
+  const { data: summary, isLoading: summaryLoading, error: summaryError, refetch: refetchSummary } = useOrderSummary();
   const { data: balance } = useBalance();
   const { data: games = [] } = useCatalogGames();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -103,26 +136,19 @@ export default function OrdersPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [orderRange, setOrderRange] = useState<OrderRange>("all");
-  const orders = summary?.recentOrders ?? [];
+  const [page, setPage] = useState(1);
+  const { data: orderList, isLoading: ordersLoading, isFetching: ordersFetching, error: ordersError, refetch: refetchOrders } = useOrderList(orderRange, search, status, page);
+  const orders = orderList?.orders ?? [];
+  const pagination = orderList?.pagination;
   const gameImages = new Map(games.map((game) => [game.name, game.imageUrl]));
-  const normalizedSearch = search.trim().toLowerCase();
-  const rangeOrders = orders.filter((order) => isOrderInRange(order, orderRange));
-  const filteredOrders = rangeOrders.filter((order) => {
-    const matchesSearch = !normalizedSearch || [
-      order.id, order.gameName, order.productName, order.playerId, order.serverId ?? "",
-    ].join(" ").toLowerCase().includes(normalizedSearch);
-    const matchesStatus = status === "all"
-      || order.orderStatus === status
-      || order.paymentStatus === status
-      || (status === "success" && isSuccessful(order));
-    return matchesSearch && matchesStatus;
-  });
   const totalSpent = balance ? Number(balance.totalSpent) : 0;
   const successRate = summary?.total ? Math.round((summary.completed / summary.total) * 100) : 0;
+  const error = summaryError || ordersError;
 
   const applyFilters = () => {
     setSearch(draftSearch);
     setStatus(draftStatus);
+    setPage(1);
   };
 
   const resetFilters = () => {
@@ -130,6 +156,8 @@ export default function OrdersPage() {
     setDraftStatus("all");
     setSearch("");
     setStatus("all");
+    setOrderRange("all");
+    setPage(1);
   };
 
   if (error) {
@@ -139,7 +167,7 @@ export default function OrdersPage() {
           <ShieldAlert className="mx-auto mb-4 h-8 w-8 text-destructive" />
           <h1 className="font-display text-2xl font-semibold">Orders unavailable</h1>
           <p className="mt-2 text-sm text-muted-foreground">We could not load the reseller order history.</p>
-          <button type="button" onClick={() => refetch()} className="mt-6 inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white"><RotateCcw className="h-4 w-4" /> Try again</button>
+          <button type="button" onClick={() => { void refetchSummary(); void refetchOrders(); }} className="mt-6 inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white"><RotateCcw className="h-4 w-4" /> Try again</button>
         </div>
       </AdminLayout>
     );
@@ -156,7 +184,7 @@ export default function OrdersPage() {
         <p className="mt-1 text-sm text-muted-foreground">Review transactions, fulfilment status, and reseller activity.</p>
       </div>
 
-      {isLoading || !summary ? (
+      {summaryLoading || ordersLoading || !summary || !orderList ? (
         <OrdersSkeleton />
       ) : (
         <>
@@ -171,9 +199,9 @@ export default function OrdersPage() {
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Check orders</span>
               <div className="flex w-full gap-2 sm:w-auto" role="group" aria-label="Order time range">
-                <RangeButton value="today" label="Today" selected={orderRange === "today"} onClick={() => setOrderRange("today")} />
-                <RangeButton value="month" label="This Month" selected={orderRange === "month"} onClick={() => setOrderRange("month")} />
-                <RangeButton value="all" label="All Time" selected={orderRange === "all"} onClick={() => setOrderRange("all")} />
+                <RangeButton value="today" label="Today" selected={orderRange === "today"} onClick={() => { setOrderRange("today"); setPage(1); }} />
+                <RangeButton value="month" label="This Month" selected={orderRange === "month"} onClick={() => { setOrderRange("month"); setPage(1); }} />
+                <RangeButton value="all" label="All Time" selected={orderRange === "all"} onClick={() => { setOrderRange("all"); setPage(1); }} />
               </div>
             </div>
             <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_220px_170px_170px]">
@@ -198,17 +226,26 @@ export default function OrdersPage() {
           </section>
 
           <div className="mb-3 flex items-center justify-between px-1">
-            <p className="text-xs font-medium text-muted-foreground">{filteredOrders.length} of {rangeOrders.length} {orderRange === "all" ? "latest" : orderRange === "today" ? "today's" : "this month's"} transactions</p>
-            <span className="flex items-center gap-1.5 text-xs font-semibold text-accent"><span className="h-2 w-2 rounded-full bg-accent" /> Live updates</span>
+            <p className="text-xs font-medium text-muted-foreground">{orders.length} of {pagination?.total ?? 0} {orderRange === "all" ? "all-time" : orderRange === "today" ? "today's" : "this month's"} transactions</p>
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-accent"><span className="h-2 w-2 rounded-full bg-accent" /> {ordersFetching ? "Updating" : "Live updates"}</span>
           </div>
 
-          {filteredOrders.length === 0 ? (
-            <div className="admin-panel rounded-3xl p-14 text-center text-sm font-medium text-muted-foreground">{orders.length ? "No transactions match your filters." : "No transactions recorded yet."}</div>
+          {orders.length === 0 ? (
+            <div className="admin-panel rounded-3xl p-14 text-center text-sm font-medium text-muted-foreground">{pagination?.total ? "No transactions match your filters." : "No transactions recorded yet."}</div>
           ) : (
             <div className="space-y-3">
-              {filteredOrders.map((order) => (
+              {orders.map((order) => (
                 <OrderCard key={order.id} order={order} imageUrl={gameImages.get(order.gameName)} currentBalance={balance?.balance} onView={() => setSelectedOrder(order)} />
               ))}
+            </div>
+          )}
+          {pagination && pagination.total > 0 && (
+            <div className="admin-panel mt-4 flex flex-col gap-3 rounded-2xl px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+              <p className="text-xs font-medium text-muted-foreground">Page {pagination.page} of {pagination.totalPages} · {pagination.total} total transactions</p>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={!pagination.hasPreviousPage || ordersFetching} className="inline-flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-45"><ChevronLeft className="h-4 w-4" /> Previous</button>
+                <button type="button" onClick={() => setPage((current) => current + 1)} disabled={!pagination.hasNextPage || ordersFetching} className="inline-flex h-9 items-center gap-1 rounded-lg bg-primary px-3 text-xs font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-45">Next <ChevronRight className="h-4 w-4" /></button>
+              </div>
             </div>
           )}
         </>
@@ -317,11 +354,16 @@ function isSuccessful(order: Order) {
   return order.orderStatus === "completed" || order.paymentStatus === "paid" || order.paymentStatus === "approved";
 }
 
-function isOrderInRange(order: Order, range: OrderRange) {
-  if (range === "all") return true;
-  const createdAt = new Date(order.createdAt);
+function getRangeDates(range: OrderRange) {
+  if (range === "all") return {};
   const now = new Date();
-  return range === "today" ? isSameDay(createdAt, now) : isSameMonth(createdAt, now);
+  const start = range === "today"
+    ? new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    : new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = range === "today"
+    ? new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+    : new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  return { from: start.toISOString(), to: end.toISOString() };
 }
 
 function RangeButton({ value, label, selected, onClick }: { value: OrderRange; label: string; selected: boolean; onClick: () => void }) {
