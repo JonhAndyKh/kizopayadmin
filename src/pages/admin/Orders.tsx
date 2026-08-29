@@ -8,7 +8,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/utils/game-helpers";
-import { format } from "date-fns";
+import { format, isSameDay, isSameMonth } from "date-fns";
 import {
   CheckCircle2, Clock3, Eye, Filter, LoaderCircle, RotateCcw, Search,
   ShieldAlert, Wallet, XCircle, Zap, DollarSign, Target,
@@ -55,6 +55,8 @@ interface CatalogGame {
   imageUrl?: string;
 }
 
+type OrderRange = "today" | "month" | "all";
+
 function useOrderSummary() {
   return useQuery<OrderSummary>({
     queryKey: ["order-summary"],
@@ -100,10 +102,12 @@ export default function OrdersPage() {
   const [draftStatus, setDraftStatus] = useState("all");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
+  const [orderRange, setOrderRange] = useState<OrderRange>("all");
   const orders = summary?.recentOrders ?? [];
   const gameImages = new Map(games.map((game) => [game.name, game.imageUrl]));
   const normalizedSearch = search.trim().toLowerCase();
-  const filteredOrders = orders.filter((order) => {
+  const rangeOrders = orders.filter((order) => isOrderInRange(order, orderRange));
+  const filteredOrders = rangeOrders.filter((order) => {
     const matchesSearch = !normalizedSearch || [
       order.id, order.gameName, order.productName, order.playerId, order.serverId ?? "",
     ].join(" ").toLowerCase().includes(normalizedSearch);
@@ -164,6 +168,14 @@ export default function OrdersPage() {
           </section>
 
           <section className="admin-panel mb-4 rounded-3xl p-3 sm:mb-5 sm:p-4">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Check orders</span>
+              <div className="flex w-full gap-2 sm:w-auto" role="group" aria-label="Order time range">
+                <RangeButton value="today" label="Today" selected={orderRange === "today"} onClick={() => setOrderRange("today")} />
+                <RangeButton value="month" label="This Month" selected={orderRange === "month"} onClick={() => setOrderRange("month")} />
+                <RangeButton value="all" label="All Time" selected={orderRange === "all"} onClick={() => setOrderRange("all")} />
+              </div>
+            </div>
             <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_220px_170px_170px]">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -186,7 +198,7 @@ export default function OrdersPage() {
           </section>
 
           <div className="mb-3 flex items-center justify-between px-1">
-            <p className="text-xs font-medium text-muted-foreground">{filteredOrders.length} of {orders.length} latest transactions</p>
+            <p className="text-xs font-medium text-muted-foreground">{filteredOrders.length} of {rangeOrders.length} {orderRange === "all" ? "latest" : orderRange === "today" ? "today's" : "this month's"} transactions</p>
             <span className="flex items-center gap-1.5 text-xs font-semibold text-accent"><span className="h-2 w-2 rounded-full bg-accent" /> Live updates</span>
           </div>
 
@@ -303,4 +315,26 @@ function OrdersSkeleton() {
 
 function isSuccessful(order: Order) {
   return order.orderStatus === "completed" || order.paymentStatus === "paid" || order.paymentStatus === "approved";
+}
+
+function isOrderInRange(order: Order, range: OrderRange) {
+  if (range === "all") return true;
+  const createdAt = new Date(order.createdAt);
+  const now = new Date();
+  return range === "today" ? isSameDay(createdAt, now) : isSameMonth(createdAt, now);
+}
+
+function RangeButton({ value, label, selected, onClick }: { value: OrderRange; label: string; selected: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      value={value}
+      onClick={onClick}
+      aria-pressed={selected}
+      data-testid={`button-order-range-${value}`}
+      className={`h-10 flex-1 rounded-xl px-3 text-xs font-semibold transition-colors sm:flex-none sm:px-4 ${selected ? "bg-primary text-white shadow-sm shadow-primary/20" : "border border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"}`}
+    >
+      {label}
+    </button>
+  );
 }
