@@ -1,8 +1,8 @@
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Activity, ChevronRight, Clock3, Gamepad2, Image, LayoutDashboard, LogOut, Megaphone, Package, Radio, ShieldCheck, Tag } from "lucide-react";
+import { Activity, ChevronRight, Clock3, Gamepad2, Image, LayoutDashboard, LogOut, Megaphone, Menu, Package, Radio, ShieldCheck, Tag, X } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 
 const NAV = [
@@ -18,6 +18,7 @@ const NAV = [
 export function AdminLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? location === href : location.startsWith(href);
@@ -94,29 +95,83 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         <Link href="/" className="flex items-center gap-2">
           <BrandMark inverse />
         </Link>
-        <Button onClick={logout} variant="ghost" size="sm" className="text-slate-300 hover:bg-white/10 hover:text-white">
-          <LogOut className="w-4 h-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button onClick={() => setMobileNavOpen((open) => !open)} variant="ghost" size="sm" className="text-slate-300 hover:bg-white/10 hover:text-white" aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}>
+            {mobileNavOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          </Button>
+          <Button onClick={logout} variant="ghost" size="sm" className="text-slate-300 hover:bg-white/10 hover:text-white" aria-label="Log out">
+            <LogOut className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
-      {/* Mobile nav bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 flex overflow-x-auto border-t border-border bg-[#17283d]/98 shadow-[0_-8px_24px_hsl(219_34%_17%/0.16)] backdrop-blur-xl md:hidden">
-        {NAV.map(({ href, label, icon: Icon, exact }) => {
-          const active = isActive(href, exact);
-          return (
-            <Link key={href} href={href} className={`min-w-[68px] flex-1 ${active ? "text-amber-300" : "text-slate-400"}`}>
-              <div className="flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-1.5">
-                <Icon className="w-4 h-4" />
-                <span className="text-[9px] font-bold uppercase tracking-wide">{label.split(" ")[0]}</span>
+      {/* Mobile navigation drawer */}
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-40 bg-[#0d1b2a]/45 md:hidden" onClick={() => setMobileNavOpen(false)}>
+          <aside className="flex h-full w-[min(82vw,300px)] flex-col bg-[#17283d] pt-14 text-slate-200 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div className="border-b border-white/10 px-5 py-4">
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                Operations online
               </div>
-            </Link>
-          );
-        })}
-      </div>
+              <p className="mt-2 text-xs leading-5 text-slate-300/70">Reseller control room</p>
+            </div>
+            <nav className="flex-1 space-y-1 px-3 py-5">
+              <p className="eyebrow px-3 pb-2 text-slate-500">Workspace</p>
+              {NAV.map(({ href, label, icon: Icon, exact }) => {
+                const active = isActive(href, exact);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setMobileNavOpen(false)}
+                    className={`group flex items-center gap-3 rounded-md border px-3 py-3 transition-colors ${
+                      active
+                        ? "border-white/10 bg-white/10 text-white"
+                        : "border-transparent text-slate-400 hover:border-white/10 hover:bg-white/5 hover:text-slate-100"
+                    }`}
+                  >
+                    <Icon className={`h-4 w-4 shrink-0 ${active ? "text-amber-300" : "text-slate-500 group-hover:text-slate-300"}`} />
+                    <span className="flex-1 text-sm font-semibold">{label}</span>
+                    {active && <ChevronRight className="h-3.5 w-3.5 text-amber-300" />}
+                  </Link>
+                );
+              })}
+            </nav>
+            <div className="mx-3 mb-4 rounded-lg border border-white/10 bg-white/5 p-3">
+              <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                <ShieldCheck className="h-3.5 w-3.5 text-amber-300" />
+                Secure session
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-amber-300/30 bg-amber-300/10 text-xs font-black uppercase text-amber-200">
+                  {user?.name?.charAt(0) ?? "A"}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-bold text-slate-100">{user?.name}</p>
+                  <p className="truncate text-[10px] text-slate-400">{user?.email}</p>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
 
       {/* Main */}
-      <main className="relative z-0 min-w-0 flex-1 overflow-auto pb-24 pt-14 md:pb-0 md:pt-0">
+      <main className="relative z-0 min-w-0 flex-1 overflow-auto pb-6 pt-14 md:pb-0 md:pt-0">
         <div className="mx-auto max-w-[1440px] px-3 py-5 sm:px-5 sm:py-7 md:px-8 md:py-9">
+          <div className="mb-5 flex items-center justify-between border-b border-border/80 pb-3 md:hidden">
+            <div className="flex min-w-0 items-center gap-2 text-[11px] text-muted-foreground">
+              <Activity className="h-3.5 w-3.5 shrink-0 text-accent" />
+              <span className="truncate font-semibold">KizoPay operations</span>
+              <ChevronRight className="h-3 w-3 shrink-0" />
+              <span className="truncate font-mono text-[10px]">{location === "/admin" ? "overview" : location.replace("/admin/", "")}</span>
+            </div>
+            <div className="ml-3 flex shrink-0 items-center gap-1.5 text-[10px] font-semibold text-muted-foreground">
+              <Clock3 className="h-3.5 w-3.5" />
+              <span className="sr-only sm:not-sr-only">Live</span>
+            </div>
+          </div>
           <div className="mb-6 hidden items-center justify-between border-b border-border/80 pb-4 md:flex">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Activity className="h-3.5 w-3.5 text-accent" />
