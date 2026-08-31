@@ -6,16 +6,13 @@ interface BrandMarkProps {
 
 const sizeStyles = {
   sm: {
-    logo: "h-8 w-8",
-    name: "text-base sm:text-lg",
+    logo: "h-14 w-[5.25rem]",
   },
   md: {
-    logo: "h-9 w-9",
-    name: "text-xl",
+    logo: "h-14 w-[5.25rem]",
   },
   login: {
-    logo: "h-10 w-10",
-    name: "text-2xl",
+    logo: "h-20 w-[8rem]",
   },
 } as const;
 
@@ -23,15 +20,12 @@ export function BrandMark({ size = "sm", className = "", inverse = false }: Bran
   const styles = sizeStyles[size];
 
   return (
-    <span className={`flex items-center gap-2.5 ${className}`}>
+    <span className={`flex items-center ${className}`}>
       <img
-        src={`${import.meta.env.BASE_URL}kizopay-logo.png`}
-        alt="KizoPay logo"
-        className={`${styles.logo} shrink-0 object-contain mix-blend-screen`}
+        src={`${import.meta.env.BASE_URL}kizotopup-logo.png`}
+        alt="KizoTopup logo"
+        className={`${styles.logo} shrink-0 object-contain`}
       />
-       <span className={`${styles.name} font-display font-black tracking-wider ${inverse ? "text-white" : "text-foreground"}`}>
-         Kizo<span className={inverse ? "text-amber-300" : "text-primary"}>Pay</span>
-      </span>
     </span>
   );
 }
